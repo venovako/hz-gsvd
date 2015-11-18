@@ -1,0 +1,14 @@
+include ../mkMAC.inc
+
+all: DGSVD.exe
+
+DGSVD.exe: DGSVD.o ../HZ/libhz.a mkMAC ../mkMAC.inc
+	$(FC) $(FCFLAGS) DGSVD.o -o$@ $(LDFLAGS)
+
+DGSVD.o: DGSVD.F90 ../HZ/hz.mod mkMAC ../mkMAC.inc
+	$(FC) $(FCFLAGS) -c DGSVD.F90
+
+clean:
+	-$(RM) DGSVD.o
+	-$(RM) DGSVD.exe
+	-$(RM) DGSVD.exe.dSYM

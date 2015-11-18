@@ -1,0 +1,17 @@
+include ../mkLNX.inc
+
+all: DGSVD.seq DGSVD.par
+
+DGSVD.seq: DGSVD.o ../HZ/libhz.a mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -mkl=sequential DGSVD.o -o$@ $(LDFLAGS)
+
+DGSVD.par: DGSVD.o ../HZ/libhz.a mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -mkl=parallel DGSVD.o -o$@ $(LDFLAGS)
+
+DGSVD.o: DGSVD.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -c DGSVD.F90
+
+clean:
+	-$(RM) DGSVD.o
+	-$(RM) DGSVD.par
+	-$(RM) DGSVD.seq

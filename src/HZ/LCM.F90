@@ -1,0 +1,16 @@
+PURE INTEGER FUNCTION LCM(A, B)
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT(IN) :: A, B
+
+  INTEGER :: G
+
+  G = GCD(A, B)
+  IF (G .EQ. 0) THEN
+     LCM = 0
+  ELSE
+     LCM = (ABS(A) / G) * ABS(B)
+  END IF
+
+END FUNCTION LCM

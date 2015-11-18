@@ -1,0 +1,2 @@
+      INTEGER WP
+      PARAMETER (WP=16)

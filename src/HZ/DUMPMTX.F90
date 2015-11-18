@@ -1,0 +1,45 @@
+SUBROUTINE DUMPMTX(FN, M, N, A, LDA, INFO)
+
+  IMPLICIT NONE
+
+  CHARACTER(LEN=*), INTENT(IN) :: FN
+  INTEGER, INTENT(IN) :: M, N, LDA
+  DOUBLE PRECISION, INTENT(IN) :: A(LDA, N)
+  INTEGER, INTENT(OUT) :: INFO
+
+  INTEGER :: U, I, J
+
+  INFO = 0
+  IF (LEN_TRIM(FN) .LE. 0) THEN
+     INFO = -1
+  ELSE IF (M .LT. 0) THEN
+     INFO = -2
+  ELSE IF (N .LT. 0) THEN
+     INFO = -3
+  ELSE IF (LDA .LT. M) THEN
+     INFO = -5
+  END IF
+  IF (INFO .NE. 0) RETURN
+
+  IF (FN .EQ. '-') THEN
+     U = GET_IOUNIT('O')
+  ELSE
+     U = GET_IOUNIT('N')
+  END IF
+  IF (U .LT. 0) THEN
+     INFO = -U
+     RETURN
+  END IF
+
+  IF (FN .NE. '-') OPEN(UNIT=U, FILE=TRIM(FN), ACTION='WRITE', STATUS='REPLACE')
+
+  DO I = 1, M
+     DO J = 1, N
+        WRITE (UNIT=U, FMT='(ES26.17E3)', ADVANCE='NO') A(I, J)
+     END DO
+     WRITE (UNIT=U, FMT=*)
+  END DO
+
+  IF (FN .NE. '-') CLOSE(U)
+
+END SUBROUTINE DUMPMTX

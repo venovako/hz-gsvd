@@ -1,0 +1,14 @@
+include ../mkMAC.inc
+
+all: exe1.exe
+
+exe1.exe: exe1.o ../HZ/libhz.a mkMAC ../mkMAC.inc
+	$(FC) $(FCFLAGS) exe1.o -o$@ $(LDFLAGS)
+
+exe1.o: exe1.F90 ../HZ/hz.mod mkMAC ../mkMAC.inc
+	$(FC) $(FCFLAGS) -c exe1.F90
+
+clean:
+	-$(RM) exe1.o
+	-$(RM) exe1.exe
+	-$(RM) exe1.exe.dSYM

@@ -1,0 +1,17 @@
+include ../mkLNX.inc
+
+all: exe1.seq exe1.par
+
+exe1.seq: exe1.o ../HZ/libhz.a mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -mkl=sequential exe1.o -o$@ $(LDFLAGS)
+
+exe1.par: exe1.o ../HZ/libhz.a mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -mkl=parallel exe1.o -o$@ $(LDFLAGS)
+
+exe1.o: exe1.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -c exe1.F90
+
+clean:
+	-$(RM) exe1.o
+	-$(RM) exe1.par
+	-$(RM) exe1.seq
