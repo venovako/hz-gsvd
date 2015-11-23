@@ -7,6 +7,7 @@ all:
 	$(MAKE) -C exe0 -f mkLNX all
 	$(MAKE) -C exe1 -f mkLNX all
 	$(MAKE) -C exe2 -f mkLNX all
+#	$(MAKE) -C exe3 -f mkLNX all
 
 clean:
 	$(MAKE) -C HZ -f mkLNX clean
@@ -15,3 +16,4 @@ clean:
 	$(MAKE) -C exe0 -f mkLNX clean
 	$(MAKE) -C exe1 -f mkLNX clean
 	$(MAKE) -C exe2 -f mkLNX clean
+#	$(MAKE) -C exe3 -f mkLNX clean

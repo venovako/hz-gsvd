@@ -75,4 +75,7 @@ CONTAINS
 ! Hari-Zimmermann, Level 2.
 #include "ZIMMER2.F90"
 
+! Hari-Zimmermann, Level 3.
+!!!include "ZIMMER3.F90"
+
 END MODULE HZ

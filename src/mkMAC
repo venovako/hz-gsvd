@@ -7,6 +7,7 @@ all:
 	$(MAKE) -C exe0 -f mkMAC all
 	$(MAKE) -C exe1 -f mkMAC all
 	$(MAKE) -C exe2 -f mkMAC all
+#	$(MAKE) -C exe3 -f mkMAC all
 
 clean:
 	$(MAKE) -C HZ -f mkMAC clean
@@ -15,3 +16,4 @@ clean:
 	$(MAKE) -C exe0 -f mkMAC clean
 	$(MAKE) -C exe1 -f mkMAC clean
 	$(MAKE) -C exe2 -f mkMAC clean
+#	$(MAKE) -C exe3 -f mkMAC clean

@@ -13,7 +13,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   INTEGER, INTENT(OUT) :: NSWEEP, INFO
   INTEGER(8), INTENT(OUT) :: NROT(2)
 
-  INTEGER :: ITER, I, J, P, PP, Q, QQ
+  INTEGER :: ITER, I, P, PP, Q, QQ
   LOGICAL :: INTRAN
   INTEGER(8) :: NROTIN(2)
 
@@ -32,9 +32,9 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   EXTERNAL :: DLASET, DROTM
 
   !DIR$ ASSUME_ALIGNED F:64, G:64, V:64, H:64, K:64, SIGMA:64
-  !DIR$ ASSUME (MOD(LDF, 64) .EQ. 0)
-  !DIR$ ASSUME (MOD(LDG, 64) .EQ. 0)
-  !DIR$ ASSUME (MOD(LDV, 64) .EQ. 0)
+  !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
+  !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
+  !DIR$ ASSUME (MOD(LDV, 8) .EQ. 0)
 
   ! Assume that argument check passed.
   INFO = 0
@@ -45,8 +45,8 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   CALL DLASET('A', LDV, N, D_ZERO, D_ONE, V, LDV)
 
   ! Ensure that all vector operations access either data or zeroes.
-  CALL DLASET('A', LDF - M, N, D_ZERO, D_ZERO, F(M + 1, 1), LDF)
-  CALL DLASET('A', LDG - M, N, D_ZERO, D_ZERO, G(M + 1, 1), LDG)
+  IF (LDF .GT. M) CALL DLASET('A', LDF - M, N, D_ZERO, D_ZERO, F(M + 1, 1), LDF)
+  IF (LDG .GT. M) CALL DLASET('A', LDG - M, N, D_ZERO, D_ZERO, G(M + 1, 1), LDG)
 
   ! Subnormal column norms should never happen (unless the column is 0-vector), due to sqrt.
   DO Q = 1, N
@@ -187,7 +187,10 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
                  COSP = MY_DFMA(MY_DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
                  SINP = MY_DFMA(MY_DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
               END IF
-              CALL DARR_DIV_SCAL(4, CSFP, FCT)
+              !DIR$ VECTOR ALWAYS, ALIGNED
+              DO I = 1, 4
+                 CSFP(I) = CSFP(I) / FCT
+              END DO
            END IF
            ! Compute the new ~app,~aqq for sorting.
            APP = COSF*COSF*APP - SCALE(COSF*SINP*APQ, 1) + SINP*SINP*AQQ
@@ -317,9 +320,9 @@ SUBROUTINE DZIMMER0(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K, SIGMA, NSWE
   DOUBLE PRECISION :: MYTOL
 
   !DIR$ ASSUME_ALIGNED F:64, G:64, V:64, H:64, K:64, SIGMA:64
-  !DIR$ ASSUME (MOD(LDF, 64) .EQ. 0)
-  !DIR$ ASSUME (MOD(LDG, 64) .EQ. 0)
-  !DIR$ ASSUME (MOD(LDV, 64) .EQ. 0)
+  !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
+  !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
+  !DIR$ ASSUME (MOD(LDV, 8) .EQ. 0)
 
   IF (MAXCYC .EQ. -1) THEN
      MCYCLE = HUGE(MAXCYC)

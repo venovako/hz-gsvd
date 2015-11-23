@@ -1,13 +1,10 @@
 RM=rm -rf
 
-CC=h5pcc
 FC=h5pfc
-
 AR=ar
-ARFLAGS=rsv
 
-CFLAGS=-DNDEBUG -O3 -march=native -ffp-contract=on -fslp-vectorize-aggressive -fPIC -integrated-as -pipe
-FORFLAGS=-fopenmp -fPIC
+FORFLAGS=-fopenmp
+ARFLAGS=rsv
 
 ifdef NDEBUG
 OPTFLAGS=-O$(NDEBUG)

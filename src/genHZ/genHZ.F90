@@ -48,9 +48,9 @@ program genHZ
 
   lda = n
   m = n
-  p = mod(lda, 4)
-  !if (p .ne. 0) lda = lda + (4 - p)
-  if (p .ne. 0) stop '{LDA=N} mod 4 <> 0'
+  p = mod(lda, 8)
+  !if (p .ne. 0) lda = lda + (8 - p)
+  if (p .ne. 0) stop '{LDA=N} mod 8 <> 0'
 
   allocate(ds_f(n))
   if (idist_f .ne. 0) then
