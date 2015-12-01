@@ -16,24 +16,25 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   INTEGER :: ITER, I, P, PP, Q, QQ
   LOGICAL :: INTRAN
   INTEGER(8) :: NROTIN(2)
-  !DIR$ ATTRIBUTES ALIGN: 64:: NROTIN
 
   DOUBLE PRECISION :: APP, AQQ, APQ, BPQ
-  DOUBLE PRECISION :: D, FCT, COT2T, BPQP, BPQM, XI, ETA
-  DOUBLE PRECISION :: TANT, COST, SINT
+  DOUBLE PRECISION :: BPQP, BPQM, XI, ETA
 
-  DOUBLE PRECISION :: CSFP(4)
+  DOUBLE PRECISION :: CSFP(8)
   !DIR$ ATTRIBUTES ALIGN: 64:: CSFP
   DOUBLE PRECISION :: COSF, SINF, COSP, SINP
   EQUIVALENCE (CSFP(1), COSF), (CSFP(2), SINF), (CSFP(3), COSP), (CSFP(4), SINP)
+  DOUBLE PRECISION :: COT2T, TANT, COST, SINT
+  EQUIVALENCE (CSFP(5), COT2T), (CSFP(6), TANT), (CSFP(7), COST), (CSFP(8), SINT)
 
-  DOUBLE PRECISION :: FASTR(5), MYTOL
+  DOUBLE PRECISION :: FASTR(8), D, FCT, MYTOL
   !DIR$ ATTRIBUTES ALIGN: 64:: FASTR
+  EQUIVALENCE (FASTR(6), D), (FASTR(7), FCT), (FASTR(8), MYTOL)
 
   DOUBLE PRECISION, EXTERNAL :: DNRM2, DDOT
   EXTERNAL :: DLASET, DROTM
 
-  !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, H:64,K:64,SIGMA:64, NROT:64
+  !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, H:64,K:64,SIGMA:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDV, 8) .EQ. 0)
@@ -44,11 +45,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   NROT = 0_8
 
   ! V = I_N
-  CALL DLASET('A', LDV, N, D_ZERO, D_ONE, V, LDV)
-
-  ! Ensure that all vector operations access either data or zeroes.
-  IF (LDF .GT. M) CALL DLASET('A', LDF - M, N, D_ZERO, D_ZERO, F(M + 1, 1), LDF)
-  IF (LDG .GT. M) CALL DLASET('A', LDG - M, N, D_ZERO, D_ZERO, G(M + 1, 1), LDG)
+  CALL DLASET('A', M, N, D_ZERO, D_ONE, V, LDV)
 
   ! Subnormal column norms should never happen (unless the column is 0-vector), due to sqrt.
   DO Q = 1, N
@@ -154,7 +151,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
                  COSP = MY_DFMA((TANT + ETA), -XI, D_ONE)             ! COSP = D_ONE - XI * (TANT  + ETA)
                  SINP = MY_DFMA(MY_DFMA(TANT, -ETA, D_ONE), XI, TANT) ! SINP = TANT  + XI * (D_ONE - ETA * TANT)
               ELSE
-                 COST = D_ONE / SQRT(MY_DFMA(TANT, TANT, D_ONE))
+                 COST = MY_RSQRT(MY_DFMA(TANT, TANT, D_ONE))
                  SINT = COST * TANT
                  COSF = MY_DFMA(MY_DFMA(COST, -ETA, SINT), XI, COST)  ! COSF = COST + XI * (SINT - ETA * COST)
                  SINF = MY_DFMA(MY_DFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = SINT - XI * (COST + ETA * SINT)
@@ -182,15 +179,16 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
                  COSP = MY_DFMA((TANT + ETA), -XI, D_ONE)             ! COSP = (D_ONE - XI * (TANT  + ETA))
                  SINP = MY_DFMA(MY_DFMA(TANT, -ETA, D_ONE), XI, TANT) ! SINP = (TANT  + XI * (D_ONE - ETA * TANT))
               ELSE
-                 COST = D_ONE / SQRT(MY_DFMA(TANT, TANT, D_ONE))
+                 COST = MY_RSQRT(MY_DFMA(TANT, TANT, D_ONE))
                  SINT = COST * TANT
                  COSF = MY_DFMA(MY_DFMA(COST, -ETA, SINT), XI, COST)  ! COSF = (COST + XI * (SINT - ETA * COST))
                  SINF = MY_DFMA(MY_DFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = (SINT - XI * (COST + ETA * SINT))
                  COSP = MY_DFMA(MY_DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
                  SINP = MY_DFMA(MY_DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
               END IF
+              !!! DO I = 1, 4 is really needed, but for 512-bit vectorisation I goes up to 8 
               !DIR$ VECTOR ALWAYS, ALIGNED
-              DO I = 1, 4
+              DO I = 1, 8
                  CSFP(I) = CSFP(I) / FCT
               END DO
            END IF
@@ -318,10 +316,10 @@ SUBROUTINE DZIMMER0(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K, SIGMA, NSWE
   INTEGER, INTENT(OUT) :: NSWEEP, INFO
   INTEGER(8), INTENT(OUT) :: NROT(2)
 
-  INTEGER :: MCYCLE
+  INTEGER :: MCYCLE, I
   DOUBLE PRECISION :: MYTOL
 
-  !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, H:64,K:64,SIGMA:64, NROT:64
+  !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, H:64,K:64,SIGMA:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDV, 8) .EQ. 0)
