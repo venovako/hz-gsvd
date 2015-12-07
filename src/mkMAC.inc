@@ -16,6 +16,6 @@ DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan
 FPUFLAGS=-DHAVE_FMA -DUSE_DIV -ffpe-trap=invalid,zero,overflow
 endif # NDEBUG
 
-LIBFLAGS=-DUSE_OPENBLAS -I../HZ
+LIBFLAGS=-I../HZ
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz -L/usr/local/lib -ltmglib -llapack -lopenblas
+LDFLAGS=-L../HZ -lhz -L/usr/local/lib -ltmglib -llapack -L/usr/lib -lblas
