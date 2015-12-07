@@ -72,6 +72,8 @@ END FUNCTION MY_RSQRT
 ! Vectorized scaling.
 #include "DARR_DIV_SCAL.F90"
 #include "DARR_DIV_SCPY.F90"
+#include "DARR_MUL_SCAL.F90"
+#include "DARR_MUL_SCPY.F90"
 
 ! Hari-Zimmermann, Level 0.
 #include "ZIMMER0.F90"

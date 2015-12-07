@@ -1,0 +1,30 @@
+PURE SUBROUTINE DARR_MUL_SCAL(N, A, S)
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT(IN) :: N
+  DOUBLE PRECISION, INTENT(INOUT) :: A(N)
+  DOUBLE PRECISION, INTENT(IN) :: S
+
+  INTEGER :: I, J
+
+  !DIR$ ASSUME_ALIGNED A:64
+  !DIR$ ASSUME (MOD(N, 8) .EQ. 0)
+
+#ifdef HAVE_PHI
+  DO I = 1, N, 8
+     !DIR$ VECTOR ALWAYS, ALIGNED
+     DO J = 0, 7
+        A(I + J) = A(I + J) * S
+     END DO
+  END DO
+#else
+  DO I = 1, N, 4
+     !DIR$ VECTOR ALWAYS, ALIGNED
+     DO J = 0, 3
+        A(I + J) = A(I + J) * S
+     END DO
+  END DO
+#endif
+  
+END SUBROUTINE DARR_MUL_SCAL

@@ -28,9 +28,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
 
   DOUBLE PRECISION, EXTERNAL :: DNRM2
   EXTERNAL :: DGEMM, DLASET, DPOTRF, DSYRK
-#ifndef USE_DIV
-  EXTERNAL :: DSCAL
-#endif
+
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, FB:64,GB:64,VB:64, H:64,K:64,SIGMA:64, NC:64,IFC:64,IFCS:64,IPL:64,INVP:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
@@ -346,7 +344,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
         IF (FCT .NE. D_ONE) CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
 #else
         D = D_ONE / FCT
-        IF (D .NE. D_ONE) CALL DSCAL(M, D, V(1, Q), 1)
+        IF (D .NE. D_ONE) CALL DARR_MUL_SCAL(M, V(1, Q), D)
 #endif
      END DO
   ELSE
@@ -356,7 +354,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
         IF (H(Q) .NE. D_ONE) CALL DARR_DIV_SCAL(M, F(1, Q), H(Q))
 #else
         D = D_ONE / H(Q)
-        IF (D .NE. D_ONE) CALL DSCAL(M, D, F(1, Q), 1)
+        IF (D .NE. D_ONE) CALL DARR_MUL_SCAL(M, F(1, Q), D)
 #endif
         K(Q) = DNRM2(M, G(1, Q), 1)
 #ifdef USE_DIV
@@ -369,7 +367,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
 #else
         D = D_ONE / K(Q)
         IF (D .NE. D_ONE) THEN
-           CALL DSCAL(M, D, G(1, Q), 1)
+           CALL DARR_MUL_SCAL(M, G(1, Q), D)
            SIGMA(Q) = H(Q) * D
         ELSE
            SIGMA(Q) = H(Q)
@@ -387,7 +385,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
         IF (D .NE. D_ONE) THEN
            H(Q) = H(Q) * D
            K(Q) = K(Q) * D
-           CALL DSCAL(M, D, V(1, Q), 1)
+           CALL DARR_MUL_SCAL(M, V(1, Q), D)
         END IF
 #endif
      END DO
