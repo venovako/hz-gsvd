@@ -2,7 +2,7 @@ include mkMAC.inc
 
 all:
 	$(MAKE) -C HZ -f mkMAC all
-	$(MAKE) -C genHZ -f mkMAC all
+#	$(MAKE) -C genHZ -f mkMAC all
 	$(MAKE) -C DGSVD -f mkMAC all
 	$(MAKE) -C exe0 -f mkMAC all
 	$(MAKE) -C exe1 -f mkMAC all
@@ -11,7 +11,7 @@ all:
 
 clean:
 	$(MAKE) -C HZ -f mkMAC clean
-	$(MAKE) -C genHZ -f mkMAC clean
+#	$(MAKE) -C genHZ -f mkMAC clean
 	$(MAKE) -C DGSVD -f mkMAC clean
 	$(MAKE) -C exe0 -f mkMAC clean
 	$(MAKE) -C exe1 -f mkMAC clean

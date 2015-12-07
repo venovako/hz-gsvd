@@ -1,13 +1,12 @@
-SUBROUTINE MY_DZIMMER2BO(FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS, MAXCYC, TOL,&
+SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS, MAXCYC, TOL,&
      NBC, IFCSRC, IFCDST, H, K, SIGMA, LCOLV, FB, GB, VB, LDA, WORK, LWORK, IWORK, LIWORK, NBSWP, NBROT, INFO)
 
-  USE OMP_LIB
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: IPART = -2
 
   LOGICAL, INTENT(IN) :: FAST
-  INTEGER, INTENT(IN) :: M, N, LDF, LDG, LDV, NBBL, NBMAXS, MAXCYC(2), NBC(*), LCOLV, LDA, LWORK, LIWORK
+  INTEGER, INTENT(IN) :: RANK, M, N, LDF, LDG, LDV, NBBL, NBMAXS, MAXCYC(2), NBC(*), LCOLV, LDA, LWORK, LIWORK
   INTEGER, INTENT(INOUT) :: IFCSRC(*), IFCDST(*)
   DOUBLE PRECISION, INTENT(IN) :: TOL
   DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,*), G(LDG,*), V(LDV,*)
@@ -17,130 +16,138 @@ SUBROUTINE MY_DZIMMER2BO(FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS, MAXCY
 
   INTEGER :: ITER, ISTP, ITH(2)
   INTEGER :: NBCF, NBSIZE, NBSW
-  INTEGER :: RANK, IP, JP, IBLK, JBLK
+  INTEGER :: INC, JNC
+  INTEGER :: IP, JP, IBLK, JBLK
+  INTEGER :: ISRC, JSRC, IDST, JDST
   INTEGER(8) :: NROT(2), MYROT(2)
   DOUBLE PRECISION :: SCL
+#ifndef USE_DIV
+  DOUBLE PRECISION :: D
+#endif
 
   DOUBLE PRECISION, EXTERNAL :: DNRM2
   EXTERNAL :: DCOPY, DGEMM, DLASET, DPOTRF, DSYRK
-
+#ifndef USE_DIV
+  EXTERNAL :: DSCAL
+#endif
+  
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, NBC:64,IFCSRC:64,IFCDST:64, FB:64,GB:64,VB:64, WORK:64,IWORK:64, H:64,K:64,SIGMA:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDV, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDA, 8) .EQ. 0)
   
-  RANK = OMP_GET_THREAD_NUM()
   CALL STRINI(RANK, NBBL, IP, JP, IBLK, JBLK)
 
+  INC = NBC(IBLK)
+  JNC = NBC(JBLK)
+  NBCF = INC + JNC
+  ISRC = IFCSRC(IBLK)
+  JSRC = IFCSRC(JBLK)
+  IDST = IFCDST(IBLK)
+  JDST = IFCDST(JBLK)
+
   ! V = I
-  ITH(1) = IFCSRC(IBLK) - 1
+  ITH(1) = ISRC - 1
   ITH(2) = LDV - ITH(1)
-  IF (ITH(1) .GT. 0) CALL DLASET('A', ITH(1), NBC(IBLK), D_ZERO, D_ZERO, V(1, IFCSRC(IBLK)),            LDV)
-  CALL DLASET('A', ITH(2), NBC(IBLK), D_ZERO, D_ONE,  V(IFCSRC(IBLK), IFCSRC(IBLK)), LDV)
-  ITH(1) = IFCSRC(JBLK) - 1
+  CALL DLASET('A', ITH(1), INC, D_ZERO, D_ZERO, V(1, ISRC),    LDV)
+  CALL DLASET('A', ITH(2), INC, D_ZERO, D_ONE,  V(ISRC, ISRC), LDV)
+  ITH(1) = JSRC - 1
   ITH(2) = LDV - ITH(1)
-  CALL DLASET('A', ITH(1), NBC(JBLK), D_ZERO, D_ZERO, V(1, IFCSRC(JBLK)),            LDV)
-  CALL DLASET('A', ITH(2), NBC(JBLK), D_ZERO, D_ONE,  V(IFCSRC(JBLK), IFCSRC(JBLK)), LDV)
+  CALL DLASET('A', ITH(1), JNC, D_ZERO, D_ZERO, V(1, JSRC),    LDV)
+  CALL DLASET('A', ITH(2), JNC, D_ZERO, D_ONE,  V(JSRC, JSRC), LDV)
 
   DO ITER = 1, MAXCYC(1)
-
      MYROT = 0_8
-     IF (.NOT. FAST) THEN
-        !$OMP SINGLE
-        WRITE (*,'(A,I3)',ADVANCE='NO') 'ITER=', ITER
-        !$OMP END SINGLE
-     END IF
 
      DO ISTP = 1, NBBL
         !$OMP BARRIER
 
-        CALL DSYRK('U', 'T', NBC(IBLK), M, D_ONE, F(1,IFCSRC(IBLK)), LDF, D_ZERO, FB(1,1),                     LDA)
-        CALL DSYRK('U', 'T', NBC(JBLK), M, D_ONE, F(1,IFCSRC(JBLK)), LDF, D_ZERO, FB(NBC(IBLK)+1,NBC(IBLK)+1), LDA)
+        CALL DSYRK('U', 'T', INC, M, D_ONE, F(1,ISRC), LDF, D_ZERO, FB(1,1),         LDA)
+        CALL DSYRK('U', 'T', JNC, M, D_ONE, F(1,JSRC), LDF, D_ZERO, FB(INC+1,INC+1), LDA)
 
-        CALL DSYRK('U', 'T', NBC(IBLK), M, D_ONE, G(1,IFCSRC(IBLK)), LDG, D_ZERO, GB(1,1),                     LDA)
-        CALL DSYRK('U', 'T', NBC(JBLK), M, D_ONE, G(1,IFCSRC(JBLK)), LDG, D_ZERO, GB(NBC(IBLK)+1,NBC(IBLK)+1), LDA)
+        CALL DSYRK('U', 'T', INC, M, D_ONE, G(1,ISRC), LDG, D_ZERO, GB(1,1),         LDA)
+        CALL DSYRK('U', 'T', JNC, M, D_ONE, G(1,JSRC), LDG, D_ZERO, GB(INC+1,INC+1), LDA)
 
-        CALL DGEMM('T', 'N', NBC(IBLK), NBC(JBLK), M, D_ONE, F(1,IFCSRC(IBLK)), LDF, F(1,IFCSRC(JBLK)), LDF, D_ZERO,&
-             FB(1,NBC(IBLK)+1), LDA)
-        CALL DGEMM('T', 'N', NBC(IBLK), NBC(JBLK), M, D_ONE, G(1,IFCSRC(IBLK)), LDG, G(1,IFCSRC(JBLK)), LDG, D_ZERO,&
-             GB(1,NBC(IBLK)+1), LDA)
-
-        NBCF = NBC(IBLK) + NBC(JBLK)
+        CALL DGEMM('T', 'N', INC, JNC, M, D_ONE, F(1,ISRC), LDF, F(1,JSRC), LDF, D_ZERO, FB(1,INC+1), LDA)
+        CALL DGEMM('T', 'N', INC, JNC, M, D_ONE, G(1,ISRC), LDG, G(1,JSRC), LDG, D_ZERO, GB(1,INC+1), LDA)
 
         CALL DPOTRF('U', NBCF, FB, LDA, ITH(1))
-        !$OMP ATOMIC UPDATE
-        INFO(2) = IOR(INFO(2), ITH(1))
-        !$OMP END ATOMIC
+        IF (ITH(1) .NE. 0) THEN
+           !$OMP ATOMIC UPDATE
+           INFO(2) = IOR(INFO(2), ITH(1))
+           !$OMP END ATOMIC
+        ELSE
+           CALL DLASET('L', NBCF - 1, NBCF - 1, D_ZERO, D_ZERO, FB(2, 1), LDA)
+        END IF
         !$OMP BARRIER
         !$OMP ATOMIC READ
         ITH(2) = INFO(2)
         !$OMP END ATOMIC
         IF (ITH(2) .NE. 0) GOTO 3
-        CALL DLASET('L', NBCF - 1, NBCF - 1, D_ZERO, D_ZERO, FB(2, 1), LDA)
+        !$OMP BARRIER
 
-        CALL DPOTRF( 'U', NBCF, GB, LDA, ITH(1))
-        !$OMP ATOMIC UPDATE
-        INFO(2) = IOR(INFO(2), ITH(1))
-        !$OMP END ATOMIC
+        CALL DPOTRF('U', NBCF, GB, LDA, ITH(1))
+        IF (ITH(1) .NE. 0) THEN
+           !$OMP ATOMIC UPDATE
+           INFO(2) = IOR(INFO(2), ITH(1))
+           !$OMP END ATOMIC
+        ELSE
+           CALL DLASET('L', NBCF - 1, NBCF - 1, D_ZERO, D_ZERO, GB(2, 1), LDA)
+        END IF
         !$OMP BARRIER
         !$OMP ATOMIC READ
         ITH(2) = INFO(2)
         !$OMP END ATOMIC
         IF (ITH(2) .NE. 0) GOTO 4
-        CALL DLASET('L', NBCF - 1, NBCF - 1, D_ZERO, D_ZERO, GB(2, 1), LDA)
+        !$OMP BARRIER
 
         CALL DZIMMER1BO(NBCF, NBCF, FB, LDA, GB, LDA, VB, LDA, MAXCYC(2), TOL, NBMAXS, IPART, H, K, SIGMA,&
              WORK, LWORK, IWORK, LIWORK, NBSIZE, NBSW, NROT, ITH)
-        !$OMP ATOMIC UPDATE
-        INFO(2) = IOR(INFO(2), ITH(1))
-        !$OMP END ATOMIC
+        IF (ITH(1) .NE. 0) THEN
+           !$OMP ATOMIC UPDATE
+           INFO(2) = IOR(INFO(2), ITH(1))
+           !$OMP END ATOMIC
+        ELSE IF (NROT(1) .GT. 0_8) THEN
+           MYROT(1) = MYROT(1) + NROT(1)
+           MYROT(2) = MYROT(2) + NROT(2)
+
+           CALL DGEMM('N', 'N', M, INC, JNC, D_ONE, F(1,JSRC), LDF, VB(INC+1,1),     LDA, D_ZERO, F(1,IDST), LDF)
+           CALL DGEMM('N', 'N', M, INC, INC, D_ONE, F(1,ISRC), LDF, VB(1,1),         LDA, D_ONE,  F(1,IDST), LDF)
+           CALL DGEMM('N', 'N', M, JNC, INC, D_ONE, F(1,ISRC), LDF, VB(1,INC+1),     LDA, D_ZERO, F(1,JDST), LDF)
+           CALL DGEMM('N', 'N', M, JNC, JNC, D_ONE, F(1,JSRC), LDF, VB(INC+1,INC+1), LDA, D_ONE,  F(1,JDST), LDF)
+
+           CALL DGEMM('N', 'N', M, INC, JNC, D_ONE, G(1,JSRC), LDG, VB(INC+1,1),     LDA, D_ZERO, G(1,IDST), LDG)
+           CALL DGEMM('N', 'N', M, INC, INC, D_ONE, G(1,ISRC), LDG, VB(1,1),         LDA, D_ONE,  G(1,IDST), LDG)
+           CALL DGEMM('N', 'N', M, JNC, INC, D_ONE, G(1,ISRC), LDG, VB(1,INC+1),     LDA, D_ZERO, G(1,JDST), LDG)
+           CALL DGEMM('N', 'N', M, JNC, JNC, D_ONE, G(1,JSRC), LDG, VB(INC+1,INC+1), LDA, D_ONE,  G(1,JDST), LDG)
+
+           CALL DGEMM('N', 'N', M, INC, JNC, D_ONE, V(1,JSRC), LDV, VB(INC+1,1),     LDA, D_ZERO, V(1,IDST), LDV)
+           CALL DGEMM('N', 'N', M, INC, INC, D_ONE, V(1,ISRC), LDV, VB(1,1),         LDA, D_ONE,  V(1,IDST), LDV)
+           CALL DGEMM('N', 'N', M, JNC, INC, D_ONE, V(1,ISRC), LDV, VB(1,INC+1),     LDA, D_ZERO, V(1,JDST), LDV)
+           CALL DGEMM('N', 'N', M, JNC, JNC, D_ONE, V(1,JSRC), LDV, VB(INC+1,INC+1), LDA, D_ONE,  V(1,JDST), LDV)
+
+           IFCSRC(IBLK) = IDST
+           IFCSRC(JBLK) = JDST
+           IFCDST(IBLK) = ISRC
+           IFCDST(JBLK) = JSRC
+        END IF
         !$OMP BARRIER
         !$OMP ATOMIC READ
         ITH(2) = INFO(2)
         !$OMP END ATOMIC
         IF (ITH(2) .NE. 0) GOTO 5
-
-        IF (NROT(1) .GT. 0_8) THEN
-           MYROT(1) = MYROT(1) + NROT(1)
-           MYROT(2) = MYROT(2) + NROT(2)
-
-           CALL DGEMM('N', 'N', M, NBC(IBLK), NBC(JBLK), D_ONE, F(1,IFCSRC(JBLK)), LDF, VB(NBC(IBLK)+1,1),           LDA, D_ZERO,&
-                F(1,IFCDST(IBLK)), LDF)
-           CALL DGEMM('N', 'N', M, NBC(IBLK), NBC(IBLK), D_ONE, F(1,IFCSRC(IBLK)), LDF, VB(1,1),                     LDA, D_ONE, &
-                F(1,IFCDST(IBLK)), LDF)
-           CALL DGEMM('N', 'N', M, NBC(JBLK), NBC(IBLK), D_ONE, F(1,IFCSRC(IBLK)), LDF, VB(1,NBC(IBLK)+1),           LDA, D_ZERO,&
-                F(1,IFCDST(JBLK)), LDF)
-           CALL DGEMM('N', 'N', M, NBC(JBLK), NBC(JBLK), D_ONE, F(1,IFCSRC(JBLK)), LDF, VB(NBC(IBLK)+1,NBC(IBLK)+1), LDA, D_ONE, &
-                F(1,IFCDST(JBLK)), LDF)
-
-           CALL DGEMM('N', 'N', M, NBC(IBLK), NBC(JBLK), D_ONE, G(1,IFCSRC(JBLK)), LDG, VB(NBC(IBLK)+1,1),           LDA, D_ZERO,&
-                G(1,IFCDST(IBLK)), LDG)
-           CALL DGEMM('N', 'N', M, NBC(IBLK), NBC(IBLK), D_ONE, G(1,IFCSRC(IBLK)), LDG, VB(1,1),                     LDA, D_ONE, &
-                G(1,IFCDST(IBLK)), LDG)
-           CALL DGEMM('N', 'N', M, NBC(JBLK), NBC(IBLK), D_ONE, G(1,IFCSRC(IBLK)), LDG, VB(1,NBC(IBLK)+1),           LDA, D_ZERO,&
-                G(1,IFCDST(JBLK)), LDG)
-           CALL DGEMM('N', 'N', M, NBC(JBLK), NBC(JBLK), D_ONE, G(1,IFCSRC(JBLK)), LDG, VB(NBC(IBLK)+1,NBC(IBLK)+1), LDA, D_ONE, &
-                G(1,IFCDST(JBLK)), LDG)
-
-           CALL DGEMM('N', 'N', M, NBC(IBLK), NBC(JBLK), D_ONE, V(1,IFCSRC(JBLK)), LDV, VB(NBC(IBLK)+1,1),           LDA, D_ZERO,&
-                V(1,IFCDST(IBLK)), LDV)
-           CALL DGEMM('N', 'N', M, NBC(IBLK), NBC(IBLK), D_ONE, V(1,IFCSRC(IBLK)), LDV, VB(1,1),                     LDA, D_ONE, &
-                V(1,IFCDST(IBLK)), LDV)
-           CALL DGEMM('N', 'N', M, NBC(JBLK), NBC(IBLK), D_ONE, V(1,IFCSRC(IBLK)), LDV, VB(1,NBC(IBLK)+1),           LDA, D_ZERO,&
-                V(1,IFCDST(JBLK)), LDV)
-           CALL DGEMM('N', 'N', M, NBC(JBLK), NBC(JBLK), D_ONE, V(1,IFCSRC(JBLK)), LDV, VB(NBC(IBLK)+1,NBC(IBLK)+1), LDA, D_ONE, &
-                V(1,IFCDST(JBLK)), LDV)
-
-           ITH(1) = IFCSRC(IBLK)
-           ITH(2) = IFCSRC(JBLK)
-           IFCSRC(IBLK) = IFCDST(IBLK)
-           IFCSRC(JBLK) = IFCDST(JBLK)
-           IFCDST(IBLK) = ITH(1)
-           IFCDST(JBLK) = ITH(2)
-        END IF
+        !$OMP BARRIER
 
         CALL MMSTEP(NBBL, IP, JP, IBLK, JBLK)
+
+        INC = NBC(IBLK)
+        JNC = NBC(JBLK)
+        NBCF = INC + JNC
+        ISRC = IFCSRC(IBLK)
+        JSRC = IFCSRC(JBLK)
+        IDST = IFCDST(IBLK)
+        JDST = IFCDST(JBLK)
      END DO
 
      !$OMP BARRIER
@@ -164,13 +171,14 @@ SUBROUTINE MY_DZIMMER2BO(FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS, MAXCY
      !$OMP ATOMIC READ
      MYROT(2) = NBROT(2)
      !$OMP END ATOMIC
+     !$OMP BARRIER
 
      MYROT(1) = MYROT(1) - NROT(1)
      MYROT(2) = MYROT(2) - NROT(2)
 
      !$OMP SINGLE
      NBSWP = ITER
-     IF (.NOT. FAST) WRITE (*,'(A,I13,A,I13)') ', MYROT(1)=', MYROT(1), ', MYROT(2)=', MYROT(2)
+     IF (.NOT. FAST) WRITE (*,'(A,I3,A,I13,A,I13)') 'ITER=', ITER, ', MYROT(1)=', MYROT(1), ', MYROT(2)=', MYROT(2)
      !$OMP END SINGLE
 
      IF (FAST) THEN
@@ -203,84 +211,196 @@ SUBROUTINE MY_DZIMMER2BO(FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS, MAXCY
   !$OMP END SINGLE
   GOTO 9
 
-8 DO JP = 1, NBC(IBLK)
-     ITH(2) = IFCSRC(IBLK) + JP - 1
+8 DO IP = 1, INC
+     ITH(2) = ISRC + IP - 1
      IF (ITH(2) .GT. N) THEN
         ITH(1) = ITH(2) - N
      ELSE
         ITH(1) = ITH(2)
      END IF
 
-     H(ITH(1)) = DNRM2(M, F(1, ITH(2)), 1)
-     K(ITH(1)) = DNRM2(M, G(1, ITH(2)), 1)
-     IF (.NOT. FAST) THEN
-        SIGMA(ITH(1)) = H(ITH(1)) / K(ITH(1))
-
-        SCL = H(ITH(1))
+     IF (FAST) THEN
+        ! Normalize V.
+        SCL = HYPOT(DNRM2(M, F(1, ITH(2)), 1), DNRM2(M, G(1, ITH(2)), 1))
+#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
-           CALL DARR_DIV_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), SCL)
+           IF (ITH(1) .NE. ITH(2)) THEN
+              CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
+           ELSE
+              CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
+           END IF
         ELSE
-           CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
+           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
         END IF
+#else
+        D = D_ONE / SCL
+        IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+        IF (D .NE. D_ONE) CALL DSCAL(M, D, V(1, ITH(1)), 1)
+#endif
+     ELSE
+        H(ITH(1)) = DNRM2(M, F(1, ITH(2)), 1)
+        K(ITH(1)) = DNRM2(M, G(1, ITH(2)), 1)
 
         SCL = K(ITH(1))
+#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
-           CALL DARR_DIV_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), SCL)
+           IF (ITH(1) .NE. ITH(2)) THEN
+              CALL DARR_DIV_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), SCL)
+           ELSE
+              CALL DARR_DIV_SCAL(M, G(1, ITH(1)), SCL)
+           END IF
+           SIGMA(ITH(1)) = H(ITH(1)) / SCL
         ELSE
-           CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
+           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
+           SIGMA(ITH(1)) = H(ITH(1))
         END IF
+#else
+        D = D_ONE / SCL
+        IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
+        IF (D .NE. D_ONE) THEN
+           CALL DSCAL(M, D, G(1, ITH(1)), 1)
+           SIGMA(ITH(1)) = H(ITH(1)) * D
+        ELSE
+           SIGMA(ITH(1)) = H(ITH(1))
+        END IF
+#endif
+
+        SCL = H(ITH(1))
+#ifdef USE_DIV
+        IF (SCL .NE. D_ONE) THEN
+           IF (ITH(1) .NE. ITH(2)) THEN
+              CALL DARR_DIV_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), SCL)
+           ELSE
+              CALL DARR_DIV_SCAL(M, F(1, ITH(1)), SCL)
+           END IF
+        ELSE
+           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
+        END IF
+#else
+        D = D_ONE / SCL
+        IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
+        IF (D .NE. D_ONE) CALL DSCAL(M, D, F(1, ITH(1)), 1)
+#endif
      END IF
 
      SCL = HYPOT(H(ITH(1)), K(ITH(1)))
+#ifdef USE_DIV
      IF (SCL .NE. D_ONE) THEN
-        IF (.NOT. FAST) THEN
-           H(ITH(1)) = H(ITH(1)) / SCL
-           K(ITH(1)) = K(ITH(1)) / SCL
+        IF (ITH(1) .NE. ITH(2)) THEN
+           CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
+        ELSE
+           CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
         END IF
-        CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
+        H(ITH(1)) = H(ITH(1)) / SCL
+        K(ITH(1)) = K(ITH(1)) / SCL
      ELSE
-        CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+        IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
      END IF
+#else
+     D = D_ONE / SCL
+     IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+     IF (D .NE. D_ONE) THEN
+        CALL DSCAL(M, D, V(1, ITH(1)), 1)
+        H(ITH(1)) = H(ITH(1)) * D
+        K(ITH(1)) = K(ITH(1)) * D
+     END IF
+#endif
   END DO
 
-  DO JP = 1, NBC(JBLK)
-     ITH(2) = IFCSRC(JBLK) + JP - 1
+  DO JP = 1, JNC
+     ITH(2) = JSRC + JP - 1
      IF (ITH(2) .GT. N) THEN
         ITH(1) = ITH(2) - N
      ELSE
         ITH(1) = ITH(2)
      END IF
 
-     H(ITH(1)) = DNRM2(M, F(1, ITH(2)), 1)
-     K(ITH(1)) = DNRM2(M, G(1, ITH(2)), 1)
-     IF (.NOT. FAST) THEN
-        SIGMA(ITH(1)) = H(ITH(1)) / K(ITH(1))
-
-        SCL = H(ITH(1))
+     IF (FAST) THEN
+        ! Normalize V.
+        SCL = HYPOT(DNRM2(M, F(1, ITH(2)), 1), DNRM2(M, G(1, ITH(2)), 1))
+#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
-           CALL DARR_DIV_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), SCL)
+           IF (ITH(1) .NE. ITH(2)) THEN
+              CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
+           ELSE
+              CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
+           END IF
         ELSE
-           CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
+           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
         END IF
+#else
+        D = D_ONE / SCL
+        IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+        IF (D .NE. D_ONE) CALL DSCAL(M, D, V(1, ITH(1)), 1)
+#endif
+     ELSE
+        H(ITH(1)) = DNRM2(M, F(1, ITH(2)), 1)
+        K(ITH(1)) = DNRM2(M, G(1, ITH(2)), 1)
 
         SCL = K(ITH(1))
+#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
-           CALL DARR_DIV_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), SCL)
+           IF (ITH(1) .NE. ITH(2)) THEN
+              CALL DARR_DIV_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), SCL)
+           ELSE
+              CALL DARR_DIV_SCAL(M, G(1, ITH(1)), SCL)
+           END IF
+           SIGMA(ITH(1)) = H(ITH(1)) / SCL
         ELSE
-           CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
+           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
+           SIGMA(ITH(1)) = H(ITH(1))
         END IF
+#else
+        D = D_ONE / SCL
+        IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
+        IF (D .NE. D_ONE) THEN
+           CALL DSCAL(M, D, G(1, ITH(1)), 1)
+           SIGMA(ITH(1)) = H(ITH(1)) * D
+        ELSE
+           SIGMA(ITH(1)) = H(ITH(1))
+        END IF
+#endif
+
+        SCL = H(ITH(1))
+#ifdef USE_DIV
+        IF (SCL .NE. D_ONE) THEN
+           IF (ITH(1) .NE. ITH(2)) THEN
+              CALL DARR_DIV_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), SCL)
+           ELSE
+              CALL DARR_DIV_SCAL(M, F(1, ITH(1)), SCL)
+           END IF
+        ELSE
+           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
+        END IF
+#else
+        D = D_ONE / SCL
+        IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
+        IF (D .NE. D_ONE) CALL DSCAL(M, D, F(1, ITH(1)), 1)
+#endif
      END IF
 
      SCL = HYPOT(H(ITH(1)), K(ITH(1)))
+#ifdef USE_DIV
      IF (SCL .NE. D_ONE) THEN
-        IF (.NOT. FAST) THEN
-           H(ITH(1)) = H(ITH(1)) / SCL
-           K(ITH(1)) = K(ITH(1)) / SCL
+        IF (ITH(1) .NE. ITH(2)) THEN
+           CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
+        ELSE
+           CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
         END IF
-        CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
+        H(ITH(1)) = H(ITH(1)) / SCL
+        K(ITH(1)) = K(ITH(1)) / SCL
      ELSE
-        CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+        IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
      END IF
+#else
+     D = D_ONE / SCL
+     IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+     IF (D .NE. D_ONE) THEN
+        CALL DSCAL(M, D, V(1, ITH(1)), 1)
+        H(ITH(1)) = H(ITH(1)) * D
+        K(ITH(1)) = K(ITH(1)) * D
+     END IF
+#endif
   END DO
 
 9 CONTINUE
@@ -300,7 +420,7 @@ SUBROUTINE DZIMMER2BO(P, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, H, K
   INTEGER, INTENT(OUT) :: IWORK(*), NSWEEP, INFO(2)
   INTEGER(8), INTENT(OUT) :: NROT(2)
 
-  INTEGER :: MY_P, NBBL, A_NBBL, N_P, LDA, N_2P, NM2P, LCOLV, A_B, OPT_LWORK, OPT_LIWORK, LW, LIW, RANK, I, J
+  INTEGER :: MY_P, NBBL, A_NBBL, N_P, LDA, N_2P, NM2P, LCOLV, A_B, OPT_LWORK, OPT_LIWORK, LW, LIW, RANK, I
   INTEGER :: MCYC(2), I_NBC, I_IFCSRC, I_IFCDST, I_INIWRK
   LOGICAL :: FAST
   DOUBLE PRECISION :: MTOL
@@ -401,7 +521,6 @@ SUBROUTINE DZIMMER2BO(P, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, H, K
 
      A_B = LDA * LCOLV
      I = CEILING(WORK(1))
-     J = 2 * N
      OPT_LWORK = (3 * A_B + I) * MY_P
      OPT_LIWORK = 3 * A_NBBL + IWORK(1) * MY_P
 
@@ -418,7 +537,7 @@ SUBROUTINE DZIMMER2BO(P, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, H, K
         INFO(2) = OPT_LIWORK
      END IF
      IF ((LWORK .EQ. -1) .OR. (LIWORK .EQ. -1)) THEN
-        INFO(2) = J
+        INFO(2) = 2 * N
         RETURN
      ELSE
         INFO(2) = 0
@@ -452,14 +571,16 @@ SUBROUTINE DZIMMER2BO(P, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, H, K
      IWORK(I_IFCDST + I) = IWORK(I_IFCSRC + I) + N
   END DO
 
-  !CALL BLAS_SET_NUM_THREADS(1)
   !$OMP PARALLEL NUM_THREADS(MY_P) DEFAULT(SHARED) PRIVATE(RANK,I)
+  !$OMP CRITICAL
+  CALL BLAS_SET_NUM_THREADS(1)
+  !$OMP END CRITICAL
   RANK = OMP_GET_THREAD_NUM()
-  I = (3 * A_B + LW) * RANK
-  CALL MY_DZIMMER2BO(FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS, MCYC, MTOL,&
+  I = (3 * A_B + LW) * RANK + 1
+  CALL MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS, MCYC, MTOL,&
        IWORK(I_NBC), IWORK(I_IFCSRC), IWORK(I_IFCDST), H, K, SIGMA,&
-       LCOLV, WORK(1 + I), WORK(1 + A_B + I), WORK(1 + 2 * A_B + I), LDA,&
-       WORK(1 + 3 * A_B + I), LW, IWORK(I_INIWRK + RANK * LIW), LIW,&
+       LCOLV, WORK(I), WORK(A_B + I), WORK(2 * A_B + I), LDA,&
+       WORK(3 * A_B + I), LW, IWORK(I_INIWRK + RANK * LIW), LIW,&
        NSWEEP, NROT, INFO)
   !$OMP END PARALLEL
 

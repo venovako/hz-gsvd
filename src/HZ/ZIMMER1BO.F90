@@ -22,10 +22,15 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
   INTEGER :: ITEMP
   INTEGER(8) :: NROTIN(2)
   DOUBLE PRECISION :: FCT
+#ifndef USE_DIV
+  DOUBLE PRECISION :: D
+#endif
 
   DOUBLE PRECISION, EXTERNAL :: DNRM2
-  EXTERNAL :: DGEMM, DLASET, DPOTRF, DSYRK !, DSCAL
-
+  EXTERNAL :: DGEMM, DLASET, DPOTRF, DSYRK
+#ifndef USE_DIV
+  EXTERNAL :: DSCAL
+#endif
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, FB:64,GB:64,VB:64, H:64,K:64,SIGMA:64, NC:64,IFC:64,IFCS:64,IPL:64,INVP:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
@@ -98,82 +103,81 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
         !           IFCS1 depends on SHUFFLED positions.
 
         NC1 = NC(IBL)
+
+        ! Check for trivial diagonal block of size 1.
+
+        IF (NC1 .LE. 0) CYCLE
+
         IFE1 = IFC(IBL)
         !**** IFCS1 = 1 + ( IPL( IBL ) - 1 ) * NBSIZE
         IFCS1 = IFCS(IPL(IBL))
 
-        ! Check for trivial diagonal block of size 1.
+        ! Nontrivial diagonal block.
 
-        IF (NC1 .GT. 0) THEN
+        CALL DSYRK('U', 'T', NC1, M, D_ONE, F(1, IFCS1), LDF, D_ZERO, FB, LDAC)
+        CALL DSYRK('U', 'T', NC1, M, D_ONE, G(1, IFCS1), LDG, D_ZERO, GB, LDAC)
 
-           ! Nontrivial diagonal block.
+        ! Call Cholesky on FB, GB.
 
-           CALL DSYRK('U', 'T', NC1, M, D_ONE, F(1, IFCS1), LDF, D_ZERO, FB, LDAC)
-           CALL DSYRK('U', 'T', NC1, M, D_ONE, G(1, IFCS1), LDG, D_ZERO, GB, LDAC)
-
-           ! Call Cholesky on FB, GB.
-
-           CALL DPOTRF('U', NC1, FB, LDAC, INFO(2))
-           IF (INFO(2) .NE. 0) THEN
-              INFO(1) = 1
-              RETURN
-           END IF
-
-           CALL DPOTRF('U', NC1, GB, LDAC, INFO(2))
-           IF (INFO(2) .NE. 0) THEN
-              INFO(1) = 2
-              RETURN
-           END IF
-
-           ! The strictly lower triangle of FB, GB has to be annihilated before HZ.
-
-           IF (NC1 .GT. 1) CALL DLASET('L', NC1 - 1, NC1 - 1, D_ZERO, D_ZERO, FB(2, 1), LDAC)
-           IF (NC1 .GT. 1) CALL DLASET('L', NC1 - 1, NC1 - 1, D_ZERO, D_ZERO, GB(2, 1), LDAC)
-
-           ! Call inner FL on (FB, GB).
-           ! VB is the transformation matrix accumulated by HZ.
-
-           CALL MY_DZIMMER0(.TRUE., NC1, NC1, 0, FB, LDAC, GB, LDAC, VB, LDAC, 1, TOL, H, K, SIGMA, ITEMP, NROTIN, INFO(2))
-           IF (INFO(2) .LT. 0) THEN
-              INFO(1) = 3
-              RETURN
-           END IF
-
-           ! If there were no ``inner'' rotations (NROTIN = 0),
-           ! then skip the block transformation.
-
-           NROT(1) = NROT(1) + NROTIN(1)
-           NROT(2) = NROT(2) + NROTIN(2)
-
-           IF (NROTIN(1) .EQ. 0_8) CYCLE
-
-           ! Update block convergence tests TRANSF.           
-           ! Note: Actually, the only ``normal'' convergence test is that
-           ! all block are completed with a single inner sweep, NSWIN = 1.
-
-           ! Slow convergence test: no rotations, or NROTIN = 0, for all blocks
-           ! throughout the current sweep.
-
-           TRANSF = .TRUE.
-
-           ! The transformation matrix is VB, returned by HZ.
-           ! Update the original ``tall'' columns in block F( IBL ) (and G( IBL )).
-
-           IFRS1 = IFCS(IPL(NBL + 1))
-
-           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, F(1, IFCS1), LDF, VB, LDAC, D_ZERO, F(1, IFRS1), LDF)
-           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, G(1, IFCS1), LDG, VB, LDAC, D_ZERO, G(1, IFRS1), LDG)
-           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, V(1, IFCS1), LDV, VB, LDAC, D_ZERO, V(1, IFRS1), LDV)
-
-           ! Shuffle.
-
-           ITEMP = IPL(IBL)
-           IPL(IBL) = IPL(NBL + 1)
-           IPL(NBL + 1) = ITEMP
-
-           ! End of code for nontrivial diagonal block.
-
+        CALL DPOTRF('U', NC1, FB, LDAC, INFO(2))
+        IF (INFO(2) .NE. 0) THEN
+           INFO(1) = 1
+           RETURN
         END IF
+
+        CALL DPOTRF('U', NC1, GB, LDAC, INFO(2))
+        IF (INFO(2) .NE. 0) THEN
+           INFO(1) = 2
+           RETURN
+        END IF
+
+        ! The strictly lower triangle of FB, GB has to be annihilated before HZ.
+
+        CALL DLASET('L', NC1 - 1, NC1 - 1, D_ZERO, D_ZERO, FB(2, 1), LDAC)
+        CALL DLASET('L', NC1 - 1, NC1 - 1, D_ZERO, D_ZERO, GB(2, 1), LDAC)
+
+        ! Call inner FL on (FB, GB).
+        ! VB is the transformation matrix accumulated by HZ.
+
+        CALL MY_DZIMMER0(.TRUE., NC1, NC1, 0, FB, LDAC, GB, LDAC, VB, LDAC, 1, TOL, H, K, SIGMA, ITEMP, NROTIN, INFO(2))
+        IF (INFO(2) .LT. 0) THEN
+           INFO(1) = 3
+           RETURN
+        END IF
+
+        ! If there were no ``inner'' rotations (NROTIN = 0),
+        ! then skip the block transformation.
+
+        NROT(1) = NROT(1) + NROTIN(1)
+        NROT(2) = NROT(2) + NROTIN(2)
+
+        IF (NROTIN(1) .EQ. 0_8) CYCLE
+
+        ! Update block convergence tests TRANSF.           
+        ! Note: Actually, the only ``normal'' convergence test is that
+        ! all block are completed with a single inner sweep, NSWIN = 1.
+
+        ! Slow convergence test: no rotations, or NROTIN = 0, for all blocks
+        ! throughout the current sweep.
+
+        TRANSF = .TRUE.
+
+        ! The transformation matrix is VB, returned by HZ.
+        ! Update the original ``tall'' columns in block F( IBL ) (and G( IBL )).
+
+        IFRS1 = IFCS(IPL(NBL + 1))
+
+        CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, F(1, IFCS1), LDF, VB, LDAC, D_ZERO, F(1, IFRS1), LDF)
+        CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, G(1, IFCS1), LDG, VB, LDAC, D_ZERO, G(1, IFRS1), LDG)
+        CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, V(1, IFCS1), LDV, VB, LDAC, D_ZERO, V(1, IFRS1), LDV)
+
+        ! Shuffle.
+
+        ITEMP = IPL(IBL)
+        IPL(IBL) = IPL(NBL + 1)
+        IPL(NBL + 1) = ITEMP
+
+        ! End of code for nontrivial diagonal block.
 
         ! End of code for a single diagonal block.
 
@@ -272,20 +276,20 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
            IFRS1 = IFCS(IPL(NBL + 1))
            IFRS2 = IFCS(IPL(NBL + 2))
 
-           CALL DGEMM('N', 'N', M, NC1, NC2, D_ONE, F(1, IFCS2), LDF, VB(NC1 + 1, 1), LDAC, D_ZERO, F(1, IFRS1), LDF)
-           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, F(1, IFCS1), LDF, VB(1, 1), LDAC, D_ONE, F(1, IFRS1), LDF)
-           CALL DGEMM('N', 'N', M, NC2, NC1, D_ONE, F(1, IFCS1), LDF, VB(1, NC1 + 1), LDAC, D_ZERO, F(1, IFRS2), LDF)
-           CALL DGEMM('N', 'N', M, NC2, NC2, D_ONE, F(1, IFCS2), LDF, VB(NC1 + 1, NC1 + 1), LDAC, D_ONE, F(1, IFRS2), LDF)
+           CALL DGEMM('N', 'N', M, NC1, NC2, D_ONE, F(1, IFCS2), LDF, VB(NC1 + 1, 1),       LDAC, D_ZERO, F(1, IFRS1), LDF)
+           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, F(1, IFCS1), LDF, VB(1, 1),             LDAC, D_ONE,  F(1, IFRS1), LDF)
+           CALL DGEMM('N', 'N', M, NC2, NC1, D_ONE, F(1, IFCS1), LDF, VB(1, NC1 + 1),       LDAC, D_ZERO, F(1, IFRS2), LDF)
+           CALL DGEMM('N', 'N', M, NC2, NC2, D_ONE, F(1, IFCS2), LDF, VB(NC1 + 1, NC1 + 1), LDAC, D_ONE,  F(1, IFRS2), LDF)
 
-           CALL DGEMM('N', 'N', M, NC1, NC2, D_ONE, G(1, IFCS2), LDG, VB(NC1 + 1, 1), LDAC, D_ZERO, G(1, IFRS1), LDG)
-           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, G(1, IFCS1), LDG, VB(1, 1), LDAC, D_ONE, G(1, IFRS1), LDG)
-           CALL DGEMM('N', 'N', M, NC2, NC1, D_ONE, G(1, IFCS1), LDG, VB(1, NC1 + 1), LDAC, D_ZERO, G(1, IFRS2), LDG)
-           CALL DGEMM('N', 'N', M, NC2, NC2, D_ONE, G(1, IFCS2), LDG, VB(NC1 + 1, NC1 + 1), LDAC, D_ONE, G(1, IFRS2), LDG)
+           CALL DGEMM('N', 'N', M, NC1, NC2, D_ONE, G(1, IFCS2), LDG, VB(NC1 + 1, 1),       LDAC, D_ZERO, G(1, IFRS1), LDG)
+           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, G(1, IFCS1), LDG, VB(1, 1),             LDAC, D_ONE,  G(1, IFRS1), LDG)
+           CALL DGEMM('N', 'N', M, NC2, NC1, D_ONE, G(1, IFCS1), LDG, VB(1, NC1 + 1),       LDAC, D_ZERO, G(1, IFRS2), LDG)
+           CALL DGEMM('N', 'N', M, NC2, NC2, D_ONE, G(1, IFCS2), LDG, VB(NC1 + 1, NC1 + 1), LDAC, D_ONE,  G(1, IFRS2), LDG)
 
-           CALL DGEMM('N', 'N', M, NC1, NC2, D_ONE, V(1, IFCS2), LDV, VB(NC1 + 1, 1), LDAC, D_ZERO, V(1, IFRS1), LDV)
-           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, V(1, IFCS1), LDV, VB(1, 1), LDAC, D_ONE, V(1, IFRS1), LDV)
-           CALL DGEMM('N', 'N', M, NC2, NC1, D_ONE, V(1, IFCS1), LDV, VB(1, NC1 + 1), LDAC, D_ZERO, V(1, IFRS2), LDV)
-           CALL DGEMM('N', 'N', M, NC2, NC2, D_ONE, V(1, IFCS2), LDV, VB(NC1 + 1, NC1 + 1), LDAC, D_ONE, V(1, IFRS2), LDV)
+           CALL DGEMM('N', 'N', M, NC1, NC2, D_ONE, V(1, IFCS2), LDV, VB(NC1 + 1, 1),       LDAC, D_ZERO, V(1, IFRS1), LDV)
+           CALL DGEMM('N', 'N', M, NC1, NC1, D_ONE, V(1, IFCS1), LDV, VB(1, 1),             LDAC, D_ONE,  V(1, IFRS1), LDV)
+           CALL DGEMM('N', 'N', M, NC2, NC1, D_ONE, V(1, IFCS1), LDV, VB(1, NC1 + 1),       LDAC, D_ZERO, V(1, IFRS2), LDV)
+           CALL DGEMM('N', 'N', M, NC2, NC2, D_ONE, V(1, IFCS2), LDV, VB(NC1 + 1, NC1 + 1), LDAC, D_ONE,  V(1, IFRS2), LDV)
 
            ! Shuffle.
 
@@ -337,28 +341,55 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
   IF (FAST) THEN
      ! Normalize V.
      DO Q = 1, N
-        H(Q) = DNRM2(M, F(1, Q), 1)
-        K(Q) = DNRM2(M, G(1, Q), 1)
-        FCT = HYPOT(H(Q), K(Q))
+        FCT = HYPOT(DNRM2(M, F(1, Q), 1), DNRM2(M, G(1, Q), 1))
+#ifdef USE_DIV
         IF (FCT .NE. D_ONE) CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
+#else
+        D = D_ONE / FCT
+        IF (D .NE. D_ONE) CALL DSCAL(M, D, V(1, Q), 1)
+#endif
      END DO
   ELSE
      DO Q = 1, N
         H(Q) = DNRM2(M, F(1, Q), 1)
+#ifdef USE_DIV
         IF (H(Q) .NE. D_ONE) CALL DARR_DIV_SCAL(M, F(1, Q), H(Q))
+#else
+        D = D_ONE / H(Q)
+        IF (D .NE. D_ONE) CALL DSCAL(M, D, F(1, Q), 1)
+#endif
         K(Q) = DNRM2(M, G(1, Q), 1)
+#ifdef USE_DIV
         IF (K(Q) .NE. D_ONE) THEN
            CALL DARR_DIV_SCAL(M, G(1, Q), K(Q))
            SIGMA(Q) = H(Q) / K(Q)
         ELSE
            SIGMA(Q) = H(Q)
         END IF
+#else
+        D = D_ONE / K(Q)
+        IF (D .NE. D_ONE) THEN
+           CALL DSCAL(M, D, G(1, Q), 1)
+           SIGMA(Q) = H(Q) * D
+        ELSE
+           SIGMA(Q) = H(Q)
+        END IF
+#endif
         FCT = HYPOT(H(Q), K(Q))
+#ifdef USE_DIV
         IF (FCT .NE. D_ONE) THEN
            H(Q) = H(Q) / FCT
            K(Q) = K(Q) / FCT
            CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
         END IF
+#else
+        D = D_ONE / FCT
+        IF (D .NE. D_ONE) THEN
+           H(Q) = H(Q) * D
+           K(Q) = K(Q) * D
+           CALL DSCAL(M, D, V(1, Q), 1)
+        END IF
+#endif
      END DO
   END IF
 
@@ -461,7 +492,7 @@ SUBROUTINE DZIMMER1BO(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, IPART,&
         INFO(1) = -10
      ELSE IF (NBMAXS .LE. 0) THEN
         INFO(1) = -11
-     ELSE IF (NBMAXS .GT. ((N + 1) / 2)) THEN
+     ELSE IF (NBMAXS .GE. N) THEN
         INFO(1) = -11
      ELSE IF (MYIPRT .LT. 1) THEN
         INFO(1) = -12
@@ -484,7 +515,7 @@ SUBROUTINE DZIMMER1BO(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, IPART,&
   LDAC = 2 * NBMAXS
   I = MOD(LDAC, 8)
   IF (I .GT. 0) LDAC = LDAC + (8 - I)
-  LDAC2 = LDAC * LDAC
+  LDAC2 = LDAC * 2 * NBMAXS
 
   MAXNBL = (N + NBMAXS - 1) / NBMAXS
   I = MOD(MAXNBL, 16)

@@ -2,7 +2,7 @@ include mkLNX.inc
 
 all:
 	$(MAKE) -C HZ -f mkLNX all
-	$(MAKE) -C genHZ -f mkLNX all
+#	$(MAKE) -C genHZ -f mkLNX all
 	$(MAKE) -C DGSVD -f mkLNX all
 	$(MAKE) -C exe0 -f mkLNX all
 	$(MAKE) -C exe1 -f mkLNX all
@@ -11,7 +11,7 @@ all:
 
 clean:
 	$(MAKE) -C HZ -f mkLNX clean
-	$(MAKE) -C genHZ -f mkLNX clean
+#	$(MAKE) -C genHZ -f mkLNX clean
 	$(MAKE) -C DGSVD -f mkLNX clean
 	$(MAKE) -C exe0 -f mkLNX clean
 	$(MAKE) -C exe1 -f mkLNX clean

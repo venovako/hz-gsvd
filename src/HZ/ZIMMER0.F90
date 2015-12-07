@@ -8,8 +8,8 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   LOGICAL, INTENT(IN) :: FAST
   INTEGER, INTENT(IN) :: M, N, NP, LDF, LDG, LDV, MAXCYC
   DOUBLE PRECISION, INTENT(IN) :: TOL
-  DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,*), G(LDG,*)
-  DOUBLE PRECISION, INTENT(OUT) :: V(LDV,*), H(*), K(*), SIGMA(*)
+  DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,N), G(LDG,N)
+  DOUBLE PRECISION, INTENT(OUT) :: V(LDV,N), H(N), K(N), SIGMA(N)
   INTEGER, INTENT(OUT) :: NSWEEP, INFO
   INTEGER(8), INTENT(OUT) :: NROT(2)
 
@@ -33,7 +33,9 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
 
   DOUBLE PRECISION, EXTERNAL :: DNRM2, DDOT
   EXTERNAL :: DLASET, DROTM
-
+#ifndef USE_DIV
+  EXTERNAL :: DSCAL
+#endif
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, H:64,K:64,SIGMA:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
@@ -61,12 +63,19 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
         RETURN
      END IF
 
+     FCT = D_ONE / D
+#ifdef USE_DIV
      IF (D .NE. D_ONE) THEN
         CALL DARR_DIV_SCAL(M, G(1, Q), D)
         CALL DARR_DIV_SCAL(M, F(1, Q), D)
-        D = D_ONE / D
      END IF
-     V(Q, Q) = D
+#else
+     IF (FCT .NE. D_ONE) THEN
+        CALL DSCAL(M, FCT, G(1, Q), 1)
+        CALL DSCAL(M, FCT, F(1, Q), 1)
+     END IF
+#endif
+     V(Q, Q) = FCT
 
      ! Should we rescale A_q such that ||A_q' * D|| is finite & normalized???
   END DO
@@ -186,11 +195,32 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
                  COSP = MY_DFMA(MY_DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
                  SINP = MY_DFMA(MY_DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
               END IF
-              !!! DO I = 1, 4 is really needed, but for 512-bit vectorisation I goes up to 8 
+#ifdef USE_DIV
+#ifdef HAVE_PHI
               !DIR$ VECTOR ALWAYS, ALIGNED
               DO I = 1, 8
                  CSFP(I) = CSFP(I) / FCT
               END DO
+#else
+              !DIR$ VECTOR ALWAYS, ALIGNED
+              DO I = 1, 4
+                 CSFP(I) = CSFP(I) / FCT
+              END DO
+#endif
+#else
+              D = D_ONE / FCT
+#ifdef HAVE_PHI
+              !DIR$ VECTOR ALWAYS, ALIGNED
+              DO I = 1, 8
+                 CSFP(I) = CSFP(I) * D
+              END DO
+#else
+              !DIR$ VECTOR ALWAYS, ALIGNED
+              DO I = 1, 4
+                 CSFP(I) = CSFP(I) * D
+              END DO
+#endif
+#endif
            END IF
            ! Compute the new ~app,~aqq for sorting.
            APP = COSF*COSF*APP - SCALE(COSF*SINP*APQ, 1) + SINP*SINP*AQQ
@@ -277,29 +307,56 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   IF (FAST) THEN
      ! Normalize V.
      DO Q = 1, N
-        H(Q) = DNRM2(M, F(1, Q), 1)
-        K(Q) = DNRM2(M, G(1, Q), 1)
-        FCT = HYPOT(H(Q), K(Q))
+        FCT = HYPOT(DNRM2(M, F(1, Q), 1), DNRM2(M, G(1, Q), 1))
+#ifdef USE_DIV
         IF (FCT .NE. D_ONE) CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
+#else
+        D = D_ONE / FCT
+        IF (D .NE. D_ONE) CALL DSCAL(M, D, V(1, Q), 1)
+#endif
      END DO
   ELSE
      DO Q = 1, N
         H(Q) = DNRM2(M, F(1, Q), 1)
+#ifdef USE_DIV
         IF (H(Q) .NE. D_ONE) CALL DARR_DIV_SCAL(M, F(1, Q), H(Q))
+#else
+        D = D_ONE / H(Q)
+        IF (D .NE. D_ONE) CALL DSCAL(M, D, F(1, Q), 1)
+#endif
         K(Q) = DNRM2(M, G(1, Q), 1)
         ! Ideally, K(Q) should be equal to 1.
+#ifdef USE_DIV
         IF (K(Q) .NE. D_ONE) THEN
            CALL DARR_DIV_SCAL(M, G(1, Q), K(Q))
            SIGMA(Q) = H(Q) / K(Q)
         ELSE
            SIGMA(Q) = H(Q)
         END IF
+#else
+        D = D_ONE / K(Q)
+        IF (D .NE. D_ONE) THEN
+           CALL DSCAL(M, D, G(1, Q), 1)
+           SIGMA(Q) = H(Q) * D
+        ELSE
+           SIGMA(Q) = H(Q)
+        END IF
+#endif
         FCT = HYPOT(H(Q), K(Q))
+#ifdef USE_DIV
         IF (FCT .NE. D_ONE) THEN
            H(Q) = H(Q) / FCT
            K(Q) = K(Q) / FCT
            CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
         END IF
+#else
+        D = D_ONE / FCT
+        IF (D .NE. D_ONE) THEN
+           H(Q) = H(Q) * D
+           K(Q) = K(Q) * D
+           CALL DSCAL(M, D, V(1, Q), 1)
+        END IF
+#endif
      END DO
   END IF
 
@@ -311,8 +368,8 @@ SUBROUTINE DZIMMER0(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K, SIGMA, NSWE
 
   INTEGER, INTENT(IN) :: M, N, LDF, LDG, LDV, MAXCYC
   DOUBLE PRECISION, INTENT(IN) :: TOL
-  DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,*), G(LDG,*)
-  DOUBLE PRECISION, INTENT(OUT) :: V(LDV,*), H(*), K(*), SIGMA(*)
+  DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,N), G(LDG,N)
+  DOUBLE PRECISION, INTENT(OUT) :: V(LDV,N), H(N), K(N), SIGMA(N)
   INTEGER, INTENT(OUT) :: NSWEEP, INFO
   INTEGER(8), INTENT(OUT) :: NROT(2)
 

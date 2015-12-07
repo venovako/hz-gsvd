@@ -9,11 +9,11 @@ ARFLAGS=rsv
 ifdef NDEBUG
 OPTFLAGS=-O$(NDEBUG)
 DBGFLAGS=-DNDEBUG
-FPUFLAGS=-DHAVE_FMA
+FPUFLAGS=-DHAVE_FMA -DUSE_DIV
 else # DEBUG
 OPTFLAGS=-O0
 DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan
-FPUFLAGS=-DHAVE_FMA -ffpe-trap=invalid,zero,overflow
+FPUFLAGS=-DHAVE_FMA -DUSE_DIV -ffpe-trap=invalid,zero,overflow
 endif # NDEBUG
 
 LIBFLAGS=-DUSE_OPENBLAS -I../HZ

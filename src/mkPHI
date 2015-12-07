@@ -1,0 +1,19 @@
+include mkPHI.inc
+
+all:
+	$(MAKE) -C HZ -f mkPHI all
+#	$(MAKE) -C genHZ -f mkPHI all
+	$(MAKE) -C DGSVD -f mkPHI all
+	$(MAKE) -C exe0 -f mkPHI all
+	$(MAKE) -C exe1 -f mkPHI all
+	$(MAKE) -C exe2 -f mkPHI all
+#	$(MAKE) -C exe3 -f mkPHI all
+
+clean:
+	$(MAKE) -C HZ -f mkPHI clean
+#	$(MAKE) -C genHZ -f mkPHI clean
+	$(MAKE) -C DGSVD -f mkPHI clean
+	$(MAKE) -C exe0 -f mkPHI clean
+	$(MAKE) -C exe1 -f mkPHI clean
+	$(MAKE) -C exe2 -f mkPHI clean
+#	$(MAKE) -C exe3 -f mkPHI clean

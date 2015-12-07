@@ -3,7 +3,7 @@ RM=rm -rf
 FC=h5pfc
 AR=xiar
 
-FORFLAGS=-qopenmp -standard-semantics -fexceptions -traceback -xHost
+FORFLAGS=-DHAVE_PHI -qopenmp -standard-semantics -fexceptions -traceback
 ARFLAGS=-qnoipo -lib rsv
 
 ifdef NDEBUG

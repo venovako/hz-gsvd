@@ -3,20 +3,28 @@ PURE SUBROUTINE DARR_DIV_SCPY(N, A, B, S)
   IMPLICIT NONE
 
   INTEGER, INTENT(IN) :: N
-  DOUBLE PRECISION, INTENT(IN) :: A(*), S
-  DOUBLE PRECISION, INTENT(OUT) :: B(*)
+  DOUBLE PRECISION, INTENT(IN) :: A(N), S
+  DOUBLE PRECISION, INTENT(OUT) :: B(N)
 
   INTEGER :: I, J
 
   !DIR$ ASSUME_ALIGNED A:64, B:64
+  !DIR$ ASSUME (MOD(N, 8) .EQ. 0)
 
+#ifdef HAVE_PHI
   DO I = 1, N, 8
-!   DO I = 1, N, 4
      !DIR$ VECTOR ALWAYS, ALIGNED
      DO J = 0, 7
-!      DO J = 0, 3
         B(I + J) = A(I + J) / S
      END DO
   END DO
+#else
+  DO I = 1, N, 4
+     !DIR$ VECTOR ALWAYS, ALIGNED
+     DO J = 0, 3
+        B(I + J) = A(I + J) / S
+     END DO
+  END DO
+#endif
 
 END SUBROUTINE DARR_DIV_SCPY
