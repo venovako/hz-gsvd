@@ -184,26 +184,28 @@ PROGRAM DGSVD
      CALL h5ltmake_dataset_int_f(GID, 'IWORK', 1, DIMS1, IWORK, INFO)
      IF (INFO .NE. 0) STOP 'Error writing IWORK!'
 
-     ! DIMS2(1) = LDA
-     ! DIMS2(2) = N
-     ! CALL h5ltmake_dataset_double_f(GID, 'A', 2, DIMS2, A, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing A!'
-     ! DIMS2(1) = LDB
-     ! DIMS2(2) = N
-     ! CALL h5ltmake_dataset_double_f(GID, 'B', 2, DIMS2, B, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing B!'
-     ! DIMS2(1) = LDU
-     ! DIMS2(2) = M
-     ! CALL h5ltmake_dataset_double_f(GID, 'U', 2, DIMS2, U, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing U!'
-     ! DIMS2(1) = LDV
-     ! DIMS2(2) = P
-     ! CALL h5ltmake_dataset_double_f(GID, 'V', 2, DIMS2, V, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing V!'
-     ! DIMS2(1) = LDQ
-     ! DIMS2(2) = N
-     ! CALL h5ltmake_dataset_double_f(GID, 'Q', 2, DIMS2, Q, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing Q!'
+#ifdef HAVE_MTXOUT
+     DIMS2(1) = LDA
+     DIMS2(2) = N
+     CALL h5ltmake_dataset_double_f(GID, 'A', 2, DIMS2, A, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing A!'
+     DIMS2(1) = LDB
+     DIMS2(2) = N
+     CALL h5ltmake_dataset_double_f(GID, 'B', 2, DIMS2, B, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing B!'
+     DIMS2(1) = LDU
+     DIMS2(2) = M
+     CALL h5ltmake_dataset_double_f(GID, 'U', 2, DIMS2, U, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing U!'
+     DIMS2(1) = LDV
+     DIMS2(2) = P
+     CALL h5ltmake_dataset_double_f(GID, 'V', 2, DIMS2, V, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing V!'
+     DIMS2(1) = LDQ
+     DIMS2(2) = N
+     CALL h5ltmake_dataset_double_f(GID, 'Q', 2, DIMS2, Q, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing Q!'
+#endif
 
      CALL h5gclose_f(GID, INFO)
      IF (INFO .NE. 0) STOP 'Error closing the output group!'

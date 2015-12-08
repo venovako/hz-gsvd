@@ -15,7 +15,7 @@ PROGRAM EXE2
   INTEGER(HSIZE_T) :: DIMS1(1), DIMS2(2)
 
   INTEGER :: IDADIM(4)
-  INTEGER :: M, N, LDA, P, MAXCYC(2), NBMAXS, LCOLV
+  INTEGER :: M, N, LDA, P, BP, MAXCYC(2), NBMAXS, LCOLV
   EQUIVALENCE (IDADIM(1), LDA), (IDADIM(1), M), (IDADIM(1), N)
 
   INTEGER :: LWORK, LIWORK, NSWEEP, INFO(2), ISTATS(4)
@@ -32,7 +32,7 @@ PROGRAM EXE2
 
   EXTERNAL :: DLACPY, DLASET, DGEQLF, DORGQL
 
-  CALL READCL(H5FN, H5GN, H5RN, NBMAXS, P)
+  CALL READCL(H5FN, H5GN, H5RN, NBMAXS, P, BP)
 
   INQUIRE(FILE=H5FN, EXIST=FEXIST)
   IF (.NOT. FEXIST) STOP 'Input file nonexistent!'
@@ -78,15 +78,6 @@ PROGRAM EXE2
   ALLOCATE(V(LDA, LCOLV))
   ALLOCATE(VQ(LDA, N))
 
-  IF (LDA .GT. M) THEN
-    INFO(1) = LDA - M
-    INFO(2) = M + 1
-    CALL DLASET('A', INFO(1), LCOLV, D_ZERO, D_ZERO, F(INFO(2), 1), LDA)
-    CALL DLASET('A', INFO(1), LCOLV, D_ZERO, D_ZERO, G(INFO(2), 1), LDA)
-    CALL DLASET('A', INFO(1), LCOLV, D_ZERO, D_ZERO, V(INFO(2), 1), LDA)
-    CALL DLASET('A', INFO(1), N, D_ZERO, D_ZERO, VQ(INFO(2), 1), LDA)
-  END IF
-
   ALLOCATE(H(N))
   ALLOCATE(K(N))
   ALLOCATE(SIGMA(N))
@@ -99,8 +90,10 @@ PROGRAM EXE2
   NSWEEP = 0
   NROT = 0_8
 
-  CALL DZIMMER2BO(P, M, N, F, LDA, G, LDA, V, LDA, MAXCYC, TOL, NBMAXS, H, K, SIGMA, DSTATS, LWORK, ISTATS, LIWORK, NSWEEP,&
-     NROT, INFO)
+  CALL INIT_THRS
+
+  CALL DZIMMER2BO(P, BP, M, N, F, LDA, G, LDA, V, LDA, MAXCYC, TOL, NBMAXS, H, K, SIGMA, DSTATS, LWORK, ISTATS, LIWORK,&
+       NSWEEP, NROT, INFO)
   IF (INFO(1) .NE. 0) STOP 'Error querying the worksize for DZIMMER2BO!'
   LIWORK = ISTATS(1)
   ISTATS(2) = MAX(CEILING(DSTATS(1)), 1)
@@ -121,8 +114,8 @@ PROGRAM EXE2
 
   CALL TIMER_START(CLK)
 
-  CALL DZIMMER2BO(P, M, N, F, LDA, G, LDA, V, LDA, MAXCYC, TOL, NBMAXS, H, K, SIGMA, WORK, LWORK, IWORK, LIWORK, NSWEEP,&
-     NROT, INFO)
+  CALL DZIMMER2BO(P, BP, M, N, F, LDA, G, LDA, V, LDA, MAXCYC, TOL, NBMAXS, H, K, SIGMA, WORK, LWORK, IWORK, LIWORK,&
+       NSWEEP, NROT, INFO)
   IF (INFO(1) .EQ. 0) THEN
     LCOLV = BLAS_SET_NUM_THREADS(P)
     CALL DGEQLF(M, N, V, LDA, TAU, WORK, LWORK, INFO(2))
@@ -147,7 +140,7 @@ PROGRAM EXE2
   DSTATS(2) = TOL
 
   WRITE (*,*) 'WALL_TIME ', DSTATS(1)
-  WRITE (*,*) 'NSWEEP ', NSWEEP
+  WRITE (*,*) 'NSWEEP ', NSWEEP, ' BP ', BP
   WRITE (*,*) 'NROT ', NROT(1), ' ', NROT(2)
   WRITE (*,*) 'INFO ', INFO(1), ' ', INFO(2)
 
@@ -189,16 +182,18 @@ PROGRAM EXE2
     CALL h5ltmake_dataset_double_f(GID, 'SIGMA', 1, DIMS1, SIGMA, INFO(2))
     IF (INFO(2) .NE. 0) STOP 'Error writing SIGMA!'
 
-    ! DIMS2(1) = LDA
-    ! DIMS2(2) = N
-    ! CALL h5ltmake_dataset_double_f(GID, 'F', 2, DIMS2, F, INFO(2))
-    ! IF (INFO(2) .NE. 0) STOP 'Error writing F!'
-    ! CALL h5ltmake_dataset_double_f(GID, 'G', 2, DIMS2, G, INFO(2))
-    ! IF (INFO(2) .NE. 0) STOP 'Error writing G!'
-    ! CALL h5ltmake_dataset_double_f(GID, 'V', 2, DIMS2, V, INFO(2))
-    ! IF (INFO(2) .NE. 0) STOP 'Error writing V!'
-    ! CALL h5ltmake_dataset_double_f(GID, 'VQ', 2, DIMS2, VQ, INFO(2))
-    ! IF (INFO(2) .NE. 0) STOP 'Error writing VQ!'
+#ifdef USE_MTXOUT
+    DIMS2(1) = LDA
+    DIMS2(2) = N
+    CALL h5ltmake_dataset_double_f(GID, 'F', 2, DIMS2, F, INFO(2))
+    IF (INFO(2) .NE. 0) STOP 'Error writing F!'
+    CALL h5ltmake_dataset_double_f(GID, 'G', 2, DIMS2, G, INFO(2))
+    IF (INFO(2) .NE. 0) STOP 'Error writing G!'
+    CALL h5ltmake_dataset_double_f(GID, 'V', 2, DIMS2, V, INFO(2))
+    IF (INFO(2) .NE. 0) STOP 'Error writing V!'
+    CALL h5ltmake_dataset_double_f(GID, 'VQ', 2, DIMS2, VQ, INFO(2))
+    IF (INFO(2) .NE. 0) STOP 'Error writing VQ!'
+#endif
 
     CALL h5gclose_f(GID, INFO(2))
     IF (INFO(2) .NE. 0) STOP 'Error closing the output group!'
@@ -221,16 +216,16 @@ PROGRAM EXE2
 
 CONTAINS
 
-  SUBROUTINE READCL(H5FN, H5GN, H5RN, NBMAXS, P)
+  SUBROUTINE READCL(H5FN, H5GN, H5RN, NBMAXS, P, BP)
 
   IMPLICIT NONE
 
   CHARACTER(LEN=*), INTENT(OUT) :: H5FN, H5GN, H5RN
-  INTEGER, INTENT(OUT) :: NBMAXS, P
+  INTEGER, INTENT(OUT) :: NBMAXS, P, BP
 
   CHARACTER(LEN=8) :: CLA
 
-  IF (COMMAND_ARGUMENT_COUNT() .GT. 5) STOP 'exe2.exe H5FN H5GN H5RN NBMAXS NTHRDS'
+  IF (COMMAND_ARGUMENT_COUNT() .GT. 6) STOP 'exe2.exe H5FN H5GN H5RN NBMAXS NTHRDS BTHRDS'
 
   IF (COMMAND_ARGUMENT_COUNT() .GE. 1) THEN
     CALL GET_COMMAND_ARGUMENT(1, H5FN)
@@ -263,6 +258,13 @@ CONTAINS
   ELSE
     WRITE (*,'(A)',ADVANCE='NO') 'NTHRDS: '
     READ (*,*) P
+  END IF
+  IF (COMMAND_ARGUMENT_COUNT() .GE. 6) THEN
+    CALL GET_COMMAND_ARGUMENT(6, CLA)
+    READ (CLA,*) BP
+  ELSE
+    WRITE (*,'(A)',ADVANCE='NO') 'BTHRDS: '
+    READ (*,*) BP
   END IF
 
   END SUBROUTINE READCL

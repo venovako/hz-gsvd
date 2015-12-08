@@ -173,16 +173,18 @@ PROGRAM EXE0
      CALL h5ltmake_dataset_double_f(GID, 'K', 1, DIMS1, K, INFO)
      IF (INFO .NE. 0) STOP 'Error writing K!'
 
-     ! DIMS2(1) = LDV
-     ! DIMS2(2) = N
-     ! CALL h5ltmake_dataset_double_f(GID, 'F', 2, DIMS2, F, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing F!'
-     ! CALL h5ltmake_dataset_double_f(GID, 'G', 2, DIMS2, G, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing G!'
-     ! CALL h5ltmake_dataset_double_f(GID, 'V', 2, DIMS2, V, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing V!'
-     ! CALL h5ltmake_dataset_double_f(GID, 'VQ', 2, DIMS2, VQ, INFO)
-     ! IF (INFO .NE. 0) STOP 'Error writing VQ!'
+#ifdef HAVE_MTXOUT
+     DIMS2(1) = LDV
+     DIMS2(2) = N
+     CALL h5ltmake_dataset_double_f(GID, 'F', 2, DIMS2, F, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing F!'
+     CALL h5ltmake_dataset_double_f(GID, 'G', 2, DIMS2, G, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing G!'
+     CALL h5ltmake_dataset_double_f(GID, 'V', 2, DIMS2, V, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing V!'
+     CALL h5ltmake_dataset_double_f(GID, 'VQ', 2, DIMS2, VQ, INFO)
+     IF (INFO .NE. 0) STOP 'Error writing VQ!'
+#endif
 
      CALL h5gclose_f(GID, INFO)
      IF (INFO .NE. 0) STOP 'Error closing the output group!'
