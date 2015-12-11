@@ -1,8 +1,10 @@
 RM=rm -rf
 
+CC=h5pcc
 FC=h5pfc
 AR=xiar
 
+C99FLAGS=-DHAVE_PHI -qopenmp -std=gnu99 -fexceptions -traceback
 FORFLAGS=-DHAVE_PHI -qopenmp -standard-semantics -fexceptions -traceback
 ARFLAGS=-qnoipo -lib rsv
 
@@ -17,5 +19,6 @@ FPUFLAGS=-DHAVE_FMA -fp-model strict -assume ieee_fpe_flags -fp-stack-check -no-
 endif # NDEBUG
 
 LIBFLAGS=-DUSE_MKL -I../HZ
+CCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(C99FLAGS) $(FPUFLAGS)
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
 LDFLAGS=-L../HZ -lhz
