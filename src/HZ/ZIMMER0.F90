@@ -17,22 +17,21 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   LOGICAL :: INTRAN
   INTEGER(8) :: NROTIN(2)
 
-  DOUBLE PRECISION :: APP, AQQ, APQ, BPQ
-  DOUBLE PRECISION :: BPQP, BPQM, XI, ETA
-
+#ifdef HAVE_PHI
   DOUBLE PRECISION :: CSFP(8)
+#else
+  DOUBLE PRECISION :: CSFP(4)
+#endif
   !DIR$ ATTRIBUTES ALIGN: 64:: CSFP
   DOUBLE PRECISION :: COSF, SINF, COSP, SINP
   EQUIVALENCE (CSFP(1), COSF), (CSFP(2), SINF), (CSFP(3), COSP), (CSFP(4), SINP)
-  DOUBLE PRECISION :: COT2T, TANT, COST, SINT
-  EQUIVALENCE (CSFP(5), COT2T), (CSFP(6), TANT), (CSFP(7), COST), (CSFP(8), SINT)
 
-  DOUBLE PRECISION :: FASTR(8), D, FCT, MYTOL
-  !DIR$ ATTRIBUTES ALIGN: 64:: FASTR
-  EQUIVALENCE (FASTR(6), D), (FASTR(7), FCT), (FASTR(8), MYTOL)
+  DOUBLE PRECISION :: COT2T, TANT, COST, SINT
+  DOUBLE PRECISION :: APP, AQQ, APQ, BPQ, BPQP, BPQM
+  DOUBLE PRECISION :: FASTR(5), D, FCT, MYTOL, XI, ETA
 
   DOUBLE PRECISION, EXTERNAL :: DDOT, DNRM2
-  EXTERNAL :: DLASET, DROTM
+  EXTERNAL :: DLASET, DROTM !, DSCAL
 
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, H:64,K:64,SIGMA:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
@@ -49,36 +48,36 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
 
   ! Subnormal column norms should never happen (unless the column is 0-vector), due to sqrt.
   DO Q = 1, N
-     D = DNRM2(M, G(1, Q), 1)
-     IF (.NOT. (D .EQ. D)) THEN ! QNaN
+     FCT = DNRM2(M, G(1, Q), 1)
+     IF (.NOT. (FCT .EQ. FCT)) THEN ! QNaN
         INFO = 3 * Q
         RETURN
-     ELSE IF (D .GT. HUGE(D)) THEN ! +Inf
+     ELSE IF (FCT .GT. HUGE(FCT)) THEN ! +Inf
         INFO = 3 * Q + 1
         RETURN
-     ELSE IF (D .LT. TINY(D)) THEN ! Subnormal
+     ELSE IF (FCT .LT. TINY(FCT)) THEN ! Subnormal
         INFO = 3 * Q + 2
         RETURN
-     END IF
-
-     FCT = D_ONE / D
+     ELSE IF (FCT .NE. D_ONE) THEN
+        D = D_ONE / FCT
 #ifdef USE_DIV
-     IF (D .NE. D_ONE) THEN
-        CALL DARR_DIV_SCAL(M, G(1, Q), D)
-        CALL DARR_DIV_SCAL(M, F(1, Q), D)
-     END IF
+        CALL DARR_DIV_SCAL(M, G(1, Q), FCT)
+        CALL DARR_DIV_SCAL(M, F(1, Q), FCT)
 #else
-     IF (FCT .NE. D_ONE) THEN
-        CALL DARR_MUL_SCAL(M, G(1, Q), FCT)
-        CALL DARR_MUL_SCAL(M, F(1, Q), FCT)
-     END IF
+        ! CALL DSCAL(M, D, G(1, Q), 1)
+        CALL DARR_MUL_SCAL(M, G(1, Q), D)
+        ! CALL DSCAL(M, D, F(1, Q), 1)
+        CALL DARR_MUL_SCAL(M, F(1, Q), D)
 #endif
-     V(Q, Q) = FCT
-
+     ELSE
+        D = D_ONE
+     END IF
+     V(Q, Q) = D
      ! Should we rescale A_q such that ||A_q' * D|| is finite & normalized???
   END DO
 
-  FCT = SCALE(EPSILON(FCT), -1) * SQRT(DBLE(M))
+  D = EPSILON(D)
+  FCT = SCALE(D, -1) * SQRT(DBLE(M))
   IF (TOL .EQ. D_MONE) THEN ! Compute own TOL.
      MYTOL = FCT
   ELSE IF (TOL .EQ. D_ZERO) THEN ! May be +0 or -0.
@@ -158,7 +157,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
                  COSP = MY_DFMA((TANT + ETA), -XI, D_ONE)             ! COSP = D_ONE - XI * (TANT  + ETA)
                  SINP = MY_DFMA(MY_DFMA(TANT, -ETA, D_ONE), XI, TANT) ! SINP = TANT  + XI * (D_ONE - ETA * TANT)
               ELSE
-                 COST = MY_RSQRT(MY_DFMA(TANT, TANT, D_ONE))
+                 COST = D_ONE / SQRT(MY_DFMA(TANT, TANT, D_ONE))
                  SINT = COST * TANT
                  COSF = MY_DFMA(MY_DFMA(COST, -ETA, SINT), XI, COST)  ! COSF = COST + XI * (SINT - ETA * COST)
                  SINF = MY_DFMA(MY_DFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = SINT - XI * (COST + ETA * SINT)
@@ -186,7 +185,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
                  COSP = MY_DFMA((TANT + ETA), -XI, D_ONE)             ! COSP = (D_ONE - XI * (TANT  + ETA))
                  SINP = MY_DFMA(MY_DFMA(TANT, -ETA, D_ONE), XI, TANT) ! SINP = (TANT  + XI * (D_ONE - ETA * TANT))
               ELSE
-                 COST = MY_RSQRT(MY_DFMA(TANT, TANT, D_ONE))
+                 COST = D_ONE / SQRT(MY_DFMA(TANT, TANT, D_ONE))
                  SINT = COST * TANT
                  COSF = MY_DFMA(MY_DFMA(COST, -ETA, SINT), XI, COST)  ! COSF = (COST + XI * (SINT - ETA * COST))
                  SINF = MY_DFMA(MY_DFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = (SINT - XI * (COST + ETA * SINT))
@@ -306,55 +305,57 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
      ! Normalize V.
      DO Q = 1, N
         FCT = HYPOT(DNRM2(M, F(1, Q), 1), DNRM2(M, G(1, Q), 1))
+        IF (FCT .NE. D_ONE) THEN
 #ifdef USE_DIV
-        IF (FCT .NE. D_ONE) CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
+           CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
 #else
-        D = D_ONE / FCT
-        IF (D .NE. D_ONE) CALL DARR_MUL_SCAL(M, V(1, Q), D)
+           D = D_ONE / FCT
+           ! CALL DSCAL(M, D, V(1, Q), 1)
+           CALL DARR_MUL_SCAL(M, V(1, Q), D)
 #endif
+        END IF
      END DO
   ELSE
      DO Q = 1, N
         H(Q) = DNRM2(M, F(1, Q), 1)
+        IF (H(Q) .NE. D_ONE) THEN
 #ifdef USE_DIV
-        IF (H(Q) .NE. D_ONE) CALL DARR_DIV_SCAL(M, F(1, Q), H(Q))
+           CALL DARR_DIV_SCAL(M, F(1, Q), H(Q))
 #else
-        D = D_ONE / H(Q)
-        IF (D .NE. D_ONE) CALL DARR_MUL_SCAL(M, F(1, Q), D)
+           D = D_ONE / H(Q)
+           ! CALL DSCAL(M, D, F(1, Q), 1)
+           CALL DARR_MUL_SCAL(M, F(1, Q), D)
 #endif
+        END IF
         K(Q) = DNRM2(M, G(1, Q), 1)
         ! Ideally, K(Q) should be equal to 1.
-#ifdef USE_DIV
         IF (K(Q) .NE. D_ONE) THEN
+#ifdef USE_DIV
            CALL DARR_DIV_SCAL(M, G(1, Q), K(Q))
            SIGMA(Q) = H(Q) / K(Q)
-        ELSE
-           SIGMA(Q) = H(Q)
-        END IF
 #else
-        D = D_ONE / K(Q)
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / K(Q)
+           ! CALL DSCAL(M, D, G(1, Q), 1)
            CALL DARR_MUL_SCAL(M, G(1, Q), D)
            SIGMA(Q) = H(Q) * D
+#endif
         ELSE
            SIGMA(Q) = H(Q)
         END IF
-#endif
         FCT = HYPOT(H(Q), K(Q))
-#ifdef USE_DIV
         IF (FCT .NE. D_ONE) THEN
+#ifdef USE_DIV
            H(Q) = H(Q) / FCT
            K(Q) = K(Q) / FCT
            CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
-        END IF
 #else
-        D = D_ONE / FCT
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / FCT
            H(Q) = H(Q) * D
            K(Q) = K(Q) * D
+           ! CALL DSCAL(M, D, V(1, Q), 1)
            CALL DARR_MUL_SCAL(M, V(1, Q), D)
-        END IF
 #endif
+        END IF
      END DO
   END IF
 

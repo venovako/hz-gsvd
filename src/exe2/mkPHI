@@ -3,7 +3,7 @@ include ../mkPHI.inc
 all: exe2.exe
 
 exe2.exe: exe2.o ../HZ/libhz.a mkPHI ../mkPHI.inc
-	$(FC) $(FCFLAGS) -mkl=parallel exe2.o -o$@ $(LDFLAGS)
+	$(FC) $(FCFLAGS) -mkl exe2.o -o$@ $(LDFLAGS)
 
 exe2.o: exe2.F90 ../HZ/hz.mod mkPHI ../mkPHI.inc
 	$(FC) $(FCFLAGS) -c exe2.F90

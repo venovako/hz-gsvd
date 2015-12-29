@@ -14,7 +14,7 @@ EXE=genHZ.exe
 all: $(EXE)
 
 $(EXE): $(OBJS) mkLNX ../mkLNX.inc
-	$(FC) $(FCFLAGS) -mkl=sequential $(OBJS) -o$@ $(LDFLAGS)
+	$(FC) $(FCFLAGS) -mkl $(OBJS) -o$@ $(LDFLAGS)
 
 $(OBJ_90): %.o: %.F90 mkLNX ../mkLNX.inc
 	$(FC) $(FCFLAGS) -c $<

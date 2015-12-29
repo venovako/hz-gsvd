@@ -219,87 +219,74 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
      IF (FAST) THEN
         ! Normalize V.
         SCL = HYPOT(DNRM2(M, F(1, ITH(2)), 1), DNRM2(M, G(1, ITH(2)), 1))
-#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
+#ifdef USE_DIV
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
            ELSE
               CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
            END IF
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
-        END IF
 #else
-        D = D_ONE / SCL
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / SCL
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_MUL_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), D)
            ELSE
               CALL DARR_MUL_SCAL(M, V(1, ITH(1)), D)
            END IF
+#endif
         ELSE
            IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
         END IF
-#endif
      ELSE
         H(ITH(1)) = DNRM2(M, F(1, ITH(2)), 1)
         K(ITH(1)) = DNRM2(M, G(1, ITH(2)), 1)
 
         SCL = K(ITH(1))
-#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
+#ifdef USE_DIV
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_DIV_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), SCL)
            ELSE
               CALL DARR_DIV_SCAL(M, G(1, ITH(1)), SCL)
            END IF
            SIGMA(ITH(1)) = H(ITH(1)) / SCL
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
-           SIGMA(ITH(1)) = H(ITH(1))
-        END IF
 #else
-        D = D_ONE / SCL
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / SCL
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_MUL_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), D)
            ELSE
               CALL DARR_MUL_SCAL(M, G(1, ITH(1)), D)
            END IF
            SIGMA(ITH(1)) = H(ITH(1)) * D
+#endif
         ELSE
            IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
            SIGMA(ITH(1)) = H(ITH(1))
         END IF
-#endif
 
         SCL = H(ITH(1))
-#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
+#ifdef USE_DIV
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_DIV_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), SCL)
            ELSE
               CALL DARR_DIV_SCAL(M, F(1, ITH(1)), SCL)
            END IF
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
-        END IF
 #else
-        D = D_ONE / SCL
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / SCL
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_MUL_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), D)
            ELSE
               CALL DARR_MUL_SCAL(M, F(1, ITH(1)), D)
            END IF
+#endif
         ELSE
            IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
         END IF
-#endif
 
         SCL = HYPOT(H(ITH(1)), K(ITH(1)))
-#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
+#ifdef USE_DIV
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
            ELSE
@@ -307,12 +294,8 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
            END IF
            H(ITH(1)) = H(ITH(1)) / SCL
            K(ITH(1)) = K(ITH(1)) / SCL
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
-        END IF
 #else
-        D = D_ONE / SCL
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / SCL
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_MUL_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), D)
            ELSE
@@ -320,10 +303,10 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
            END IF
            H(ITH(1)) = H(ITH(1)) * D
            K(ITH(1)) = K(ITH(1)) * D
+#endif
         ELSE
            IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
         END IF
-#endif
      END IF
   END DO
 
@@ -338,87 +321,74 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
      IF (FAST) THEN
         ! Normalize V.
         SCL = HYPOT(DNRM2(M, F(1, ITH(2)), 1), DNRM2(M, G(1, ITH(2)), 1))
-#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
+#ifdef USE_DIV
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
            ELSE
               CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
            END IF
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
-        END IF
 #else
-        D = D_ONE / SCL
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / SCL
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_MUL_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), D)
            ELSE
               CALL DARR_MUL_SCAL(M, V(1, ITH(1)), D)
            END IF
+#endif
         ELSE
            IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
         END IF
-#endif
      ELSE
         H(ITH(1)) = DNRM2(M, F(1, ITH(2)), 1)
         K(ITH(1)) = DNRM2(M, G(1, ITH(2)), 1)
 
         SCL = K(ITH(1))
-#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
+#ifdef USE_DIV
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_DIV_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), SCL)
            ELSE
               CALL DARR_DIV_SCAL(M, G(1, ITH(1)), SCL)
            END IF
            SIGMA(ITH(1)) = H(ITH(1)) / SCL
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
-           SIGMA(ITH(1)) = H(ITH(1))
-        END IF
 #else
-        D = D_ONE / SCL
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / SCL
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_MUL_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), D)
            ELSE
               CALL DARR_MUL_SCAL(M, G(1, ITH(1)), D)
            END IF
            SIGMA(ITH(1)) = H(ITH(1)) * D
+#endif
         ELSE
            IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
            SIGMA(ITH(1)) = H(ITH(1))
         END IF
-#endif
 
         SCL = H(ITH(1))
-#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
+#ifdef USE_DIV
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_DIV_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), SCL)
            ELSE
               CALL DARR_DIV_SCAL(M, F(1, ITH(1)), SCL)
            END IF
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
-        END IF
 #else
-        D = D_ONE / SCL
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / SCL
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_MUL_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), D)
            ELSE
               CALL DARR_MUL_SCAL(M, F(1, ITH(1)), D)
            END IF
+#endif
         ELSE
            IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
         END IF
-#endif
 
         SCL = HYPOT(H(ITH(1)), K(ITH(1)))
-#ifdef USE_DIV
         IF (SCL .NE. D_ONE) THEN
+#ifdef USE_DIV
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
            ELSE
@@ -426,12 +396,8 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
            END IF
            H(ITH(1)) = H(ITH(1)) / SCL
            K(ITH(1)) = K(ITH(1)) / SCL
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
-        END IF
 #else
-        D = D_ONE / SCL
-        IF (D .NE. D_ONE) THEN
+           D = D_ONE / SCL
            IF (ITH(1) .NE. ITH(2)) THEN
               CALL DARR_MUL_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), D)
            ELSE
@@ -439,10 +405,10 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
            END IF
            H(ITH(1)) = H(ITH(1)) * D
            K(ITH(1)) = K(ITH(1)) * D
+#endif
         ELSE
            IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
         END IF
-#endif
      END IF
   END DO
 
@@ -624,7 +590,6 @@ SUBROUTINE DZIMMER2BO(P, BP, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, 
   RANK = OMP_GET_THREAD_NUM()
   I = (3 * A_B + LW) * RANK + 1
   NT = BLAS_SET_NUM_THREADS(BP)
-  PRINT *, 'RANK = ', RANK, ' NT = ', NT, ' BIND = ', OMP_GET_PROC_BIND()
   CALL MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS, MCYC, MTOL,&
        IWORK(I_NBC), IWORK(I_IFCSRC), IWORK(I_IFCDST), H, K, SIGMA,&
        LCOLV, WORK(I), WORK(A_B + I), WORK(2 * A_B + I), LDA,&
