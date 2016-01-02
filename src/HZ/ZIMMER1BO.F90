@@ -24,7 +24,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
   DOUBLE PRECISION :: D, FCT
 
   DOUBLE PRECISION, EXTERNAL :: DNRM2
-  EXTERNAL :: DGEMM, DLASET, DPOTRF, DSCAL, DSYRK !, DSCAL
+  EXTERNAL :: DGEMM, DLASET, DPOTRF, DSCAL, DSYRK
 
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, FB:64,GB:64,VB:64, H:64,K:64,SIGMA:64, NC:64,IFC:64,IFCS:64,IPL:64,INVP:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
@@ -338,54 +338,31 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
      DO Q = 1, N
         FCT = HYPOT(DNRM2(M, F(1, Q), 1), DNRM2(M, G(1, Q), 1))
         IF (FCT .NE. D_ONE) THEN
-#ifdef USE_DIV
-           CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
-#else
            D = D_ONE / FCT
-           ! CALL DSCAL(M, D, V(1, Q), 1)
-           CALL DARR_MUL_SCAL(M, V(1, Q), D)
-#endif
+           CALL DSCAL(M, D, V(1, Q), 1)
         END IF
      END DO
   ELSE
      DO Q = 1, N
         H(Q) = DNRM2(M, F(1, Q), 1)
         IF (H(Q) .NE. D_ONE) THEN
-#ifdef USE_DIV
-           CALL DARR_DIV_SCAL(M, F(1, Q), H(Q))
-#else
            D = D_ONE / H(Q)
-           ! CALL DSCAL(M, D, F(1, Q), 1)
-           CALL DARR_MUL_SCAL(M, F(1, Q), D)
-#endif
+           CALL DSCAL(M, D, F(1, Q), 1)
         END IF
         K(Q) = DNRM2(M, G(1, Q), 1)
         IF (K(Q) .NE. D_ONE) THEN
-#ifdef USE_DIV
-           CALL DARR_DIV_SCAL(M, G(1, Q), K(Q))
-           SIGMA(Q) = H(Q) / K(Q)
-#else
            D = D_ONE / K(Q)
-           ! CALL DSCAL(M, D, G(1, Q), 1)
-           CALL DARR_MUL_SCAL(M, G(1, Q), D)
            SIGMA(Q) = H(Q) * D
-#endif
+           CALL DSCAL(M, D, G(1, Q), 1)
         ELSE
            SIGMA(Q) = H(Q)
         END IF
         FCT = HYPOT(H(Q), K(Q))
         IF (FCT .NE. D_ONE) THEN
-#ifdef USE_DIV
-           H(Q) = H(Q) / FCT
-           K(Q) = K(Q) / FCT
-           CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
-#else
            D = D_ONE / FCT
            H(Q) = H(Q) * D
            K(Q) = K(Q) * D
-           ! CALL DSCAL(M, D, V(1, Q), 1)
-           CALL DARR_MUL_SCAL(M, V(1, Q), D)
-#endif
+           CALL DSCAL(M, D, V(1, Q), 1)
         END IF
      END DO
   END IF

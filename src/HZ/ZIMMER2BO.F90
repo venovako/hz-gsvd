@@ -20,13 +20,11 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
   INTEGER :: IP, JP, IBLK, JBLK
   INTEGER :: ISRC, JSRC, IDST, JDST
   INTEGER(8) :: NROT(2), MYROT(2)
-  DOUBLE PRECISION :: SCL
-#ifndef USE_DIV
-  DOUBLE PRECISION :: D
-#endif
+  DOUBLE PRECISION :: SCL, D
+  LOGICAL :: LCPY
 
   DOUBLE PRECISION, EXTERNAL :: DNRM2
-  EXTERNAL :: DCOPY, DGEMM, DLASET, DPOTRF, DSYRK
+  EXTERNAL :: DCOPY, DGEMM, DLASET, DPOTRF, DSCAL, DSYRK
   
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, NBC:64,IFCSRC:64,IFCDST:64, FB:64,GB:64,VB:64, WORK:64,IWORK:64, H:64,K:64,SIGMA:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
@@ -212,101 +210,49 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
      ITH(2) = ISRC + IP - 1
      IF (ITH(2) .GT. N) THEN
         ITH(1) = ITH(2) - N
+        LCPY = .TRUE.
      ELSE
         ITH(1) = ITH(2)
+        LCPY = .FALSE.
      END IF
 
      IF (FAST) THEN
         ! Normalize V.
         SCL = HYPOT(DNRM2(M, F(1, ITH(2)), 1), DNRM2(M, G(1, ITH(2)), 1))
         IF (SCL .NE. D_ONE) THEN
-#ifdef USE_DIV
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
-           ELSE
-              CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
-           END IF
-#else
            D = D_ONE / SCL
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_MUL_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), D)
-           ELSE
-              CALL DARR_MUL_SCAL(M, V(1, ITH(1)), D)
-           END IF
-#endif
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+           CALL DSCAL(M, D, V(1, ITH(2)), 1)
         END IF
+        IF (LCPY) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
      ELSE
         H(ITH(1)) = DNRM2(M, F(1, ITH(2)), 1)
         K(ITH(1)) = DNRM2(M, G(1, ITH(2)), 1)
 
         SCL = K(ITH(1))
         IF (SCL .NE. D_ONE) THEN
-#ifdef USE_DIV
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_DIV_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), SCL)
-           ELSE
-              CALL DARR_DIV_SCAL(M, G(1, ITH(1)), SCL)
-           END IF
-           SIGMA(ITH(1)) = H(ITH(1)) / SCL
-#else
            D = D_ONE / SCL
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_MUL_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), D)
-           ELSE
-              CALL DARR_MUL_SCAL(M, G(1, ITH(1)), D)
-           END IF
            SIGMA(ITH(1)) = H(ITH(1)) * D
-#endif
+           CALL DSCAL(M, D, G(1, ITH(2)), 1)
         ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
            SIGMA(ITH(1)) = H(ITH(1))
         END IF
+        IF (LCPY) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
 
         SCL = H(ITH(1))
         IF (SCL .NE. D_ONE) THEN
-#ifdef USE_DIV
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_DIV_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), SCL)
-           ELSE
-              CALL DARR_DIV_SCAL(M, F(1, ITH(1)), SCL)
-           END IF
-#else
            D = D_ONE / SCL
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_MUL_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), D)
-           ELSE
-              CALL DARR_MUL_SCAL(M, F(1, ITH(1)), D)
-           END IF
-#endif
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
+           CALL DSCAL(M, D, F(1, ITH(2)), 1)
         END IF
+        IF (LCPY) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
 
         SCL = HYPOT(H(ITH(1)), K(ITH(1)))
         IF (SCL .NE. D_ONE) THEN
-#ifdef USE_DIV
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
-           ELSE
-              CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
-           END IF
-           H(ITH(1)) = H(ITH(1)) / SCL
-           K(ITH(1)) = K(ITH(1)) / SCL
-#else
            D = D_ONE / SCL
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_MUL_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), D)
-           ELSE
-              CALL DARR_MUL_SCAL(M, V(1, ITH(1)), D)
-           END IF
            H(ITH(1)) = H(ITH(1)) * D
            K(ITH(1)) = K(ITH(1)) * D
-#endif
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+           CALL DSCAL(M, D, V(1, ITH(2)), 1)
         END IF
+        IF (LCPY) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
      END IF
   END DO
 
@@ -314,101 +260,49 @@ SUBROUTINE MY_DZIMMER2BO(RANK, FAST, M, N, F, LDF, G, LDG, V, LDV, NBBL, NBMAXS,
      ITH(2) = JSRC + JP - 1
      IF (ITH(2) .GT. N) THEN
         ITH(1) = ITH(2) - N
+        LCPY = .TRUE.
      ELSE
         ITH(1) = ITH(2)
+        LCPY = .FALSE.
      END IF
 
      IF (FAST) THEN
         ! Normalize V.
         SCL = HYPOT(DNRM2(M, F(1, ITH(2)), 1), DNRM2(M, G(1, ITH(2)), 1))
         IF (SCL .NE. D_ONE) THEN
-#ifdef USE_DIV
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
-           ELSE
-              CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
-           END IF
-#else
            D = D_ONE / SCL
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_MUL_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), D)
-           ELSE
-              CALL DARR_MUL_SCAL(M, V(1, ITH(1)), D)
-           END IF
-#endif
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+           CALL DSCAL(M, D, V(1, ITH(2)), 1)
         END IF
+        IF (LCPY) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
      ELSE
         H(ITH(1)) = DNRM2(M, F(1, ITH(2)), 1)
         K(ITH(1)) = DNRM2(M, G(1, ITH(2)), 1)
 
         SCL = K(ITH(1))
         IF (SCL .NE. D_ONE) THEN
-#ifdef USE_DIV
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_DIV_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), SCL)
-           ELSE
-              CALL DARR_DIV_SCAL(M, G(1, ITH(1)), SCL)
-           END IF
-           SIGMA(ITH(1)) = H(ITH(1)) / SCL
-#else
            D = D_ONE / SCL
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_MUL_SCPY(M, G(1, ITH(2)), G(1, ITH(1)), D)
-           ELSE
-              CALL DARR_MUL_SCAL(M, G(1, ITH(1)), D)
-           END IF
            SIGMA(ITH(1)) = H(ITH(1)) * D
-#endif
+           CALL DSCAL(M, D, G(1, ITH(2)), 1)
         ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
            SIGMA(ITH(1)) = H(ITH(1))
         END IF
+        IF (LCPY) CALL DCOPY(M, G(1, ITH(2)), 1, G(1, ITH(1)), 1)
 
         SCL = H(ITH(1))
         IF (SCL .NE. D_ONE) THEN
-#ifdef USE_DIV
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_DIV_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), SCL)
-           ELSE
-              CALL DARR_DIV_SCAL(M, F(1, ITH(1)), SCL)
-           END IF
-#else
            D = D_ONE / SCL
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_MUL_SCPY(M, F(1, ITH(2)), F(1, ITH(1)), D)
-           ELSE
-              CALL DARR_MUL_SCAL(M, F(1, ITH(1)), D)
-           END IF
-#endif
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
+           CALL DSCAL(M, D, F(1, ITH(2)), 1)
         END IF
+        IF (LCPY) CALL DCOPY(M, F(1, ITH(2)), 1, F(1, ITH(1)), 1)
 
         SCL = HYPOT(H(ITH(1)), K(ITH(1)))
         IF (SCL .NE. D_ONE) THEN
-#ifdef USE_DIV
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_DIV_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), SCL)
-           ELSE
-              CALL DARR_DIV_SCAL(M, V(1, ITH(1)), SCL)
-           END IF
-           H(ITH(1)) = H(ITH(1)) / SCL
-           K(ITH(1)) = K(ITH(1)) / SCL
-#else
            D = D_ONE / SCL
-           IF (ITH(1) .NE. ITH(2)) THEN
-              CALL DARR_MUL_SCPY(M, V(1, ITH(2)), V(1, ITH(1)), D)
-           ELSE
-              CALL DARR_MUL_SCAL(M, V(1, ITH(1)), D)
-           END IF
            H(ITH(1)) = H(ITH(1)) * D
            K(ITH(1)) = K(ITH(1)) * D
-#endif
-        ELSE
-           IF (ITH(1) .NE. ITH(2)) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
+           CALL DSCAL(M, D, V(1, ITH(2)), 1)
         END IF
+        IF (LCPY) CALL DCOPY(M, V(1, ITH(2)), 1, V(1, ITH(1)), 1)
      END IF
   END DO
 

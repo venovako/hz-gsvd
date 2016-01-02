@@ -21,18 +21,11 @@ CONTAINS
   END FUNCTION MY_DFMA
 
 ! Threading support.
-#include "INIT_THRS.F90"
 #include "BLAS_SET_NUM_THREADS.F90"
 #include "GET_NTHR.F90"
 
 ! I/O support.
 #include "GET_IOUNIT.F90"
-#include "DUMPMTX.F90"
-
-! Alignment support.
-#include "GCD.F90"
-#include "LCM.F90"
-#include "LDALIGN.F90"
 
 ! Timing support.
 #include "TIMER_START.F90"
@@ -50,12 +43,6 @@ CONTAINS
 ! Stepper.
 #include "STRINI.F90"
 #include "MMSTEP.F90"
-
-! Vectorized scaling.
-#include "DARR_DIV_SCAL.F90"
-#include "DARR_DIV_SCPY.F90"
-#include "DARR_MUL_SCAL.F90"
-#include "DARR_MUL_SCPY.F90"
 
 ! Hari-Zimmermann, Level 0.
 #include "ZIMMER0.F90"

@@ -31,7 +31,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   DOUBLE PRECISION :: FASTR(5), D, FCT, MYTOL, XI, ETA
 
   DOUBLE PRECISION, EXTERNAL :: DDOT, DNRM2
-  EXTERNAL :: DLASET, DROTM !, DSCAL
+  EXTERNAL :: DLASET, DROTM, DSCAL
 
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, H:64,K:64,SIGMA:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
@@ -42,6 +42,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   INFO = 0
   NSWEEP = 0
   NROT = 0_8
+  CSFP = D_ZERO
 
   ! V = I_N
   CALL DLASET('A', M, N, D_ZERO, D_ONE, V, LDV)
@@ -60,15 +61,8 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
         RETURN
      ELSE IF (FCT .NE. D_ONE) THEN
         D = D_ONE / FCT
-#ifdef USE_DIV
-        CALL DARR_DIV_SCAL(M, G(1, Q), FCT)
-        CALL DARR_DIV_SCAL(M, F(1, Q), FCT)
-#else
-        ! CALL DSCAL(M, D, G(1, Q), 1)
-        CALL DARR_MUL_SCAL(M, G(1, Q), D)
-        ! CALL DSCAL(M, D, F(1, Q), 1)
-        CALL DARR_MUL_SCAL(M, F(1, Q), D)
-#endif
+        CALL DSCAL(M, D, G(1, Q), 1)
+        CALL DSCAL(M, D, F(1, Q), 1)
      ELSE
         D = D_ONE
      END IF
@@ -192,21 +186,8 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
                  COSP = MY_DFMA(MY_DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
                  SINP = MY_DFMA(MY_DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
               END IF
-#ifdef USE_DIV
 #ifdef HAVE_PHI
-              !DIR$ VECTOR ALWAYS, ALIGNED
-              DO I = 1, 8
-                 CSFP(I) = CSFP(I) / FCT
-              END DO
-#else
-              !DIR$ VECTOR ALWAYS, ALIGNED
-              DO I = 1, 4
-                 CSFP(I) = CSFP(I) / FCT
-              END DO
-#endif
-#else
               D = D_ONE / FCT
-#ifdef HAVE_PHI
               !DIR$ VECTOR ALWAYS, ALIGNED
               DO I = 1, 8
                  CSFP(I) = CSFP(I) * D
@@ -214,9 +195,8 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
 #else
               !DIR$ VECTOR ALWAYS, ALIGNED
               DO I = 1, 4
-                 CSFP(I) = CSFP(I) * D
+                 CSFP(I) = CSFP(I) / FCT
               END DO
-#endif
 #endif
            END IF
            ! Compute the new ~app,~aqq for sorting.
@@ -306,55 +286,32 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
      DO Q = 1, N
         FCT = HYPOT(DNRM2(M, F(1, Q), 1), DNRM2(M, G(1, Q), 1))
         IF (FCT .NE. D_ONE) THEN
-#ifdef USE_DIV
-           CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
-#else
            D = D_ONE / FCT
-           ! CALL DSCAL(M, D, V(1, Q), 1)
-           CALL DARR_MUL_SCAL(M, V(1, Q), D)
-#endif
+           CALL DSCAL(M, D, V(1, Q), 1)
         END IF
      END DO
   ELSE
      DO Q = 1, N
         H(Q) = DNRM2(M, F(1, Q), 1)
         IF (H(Q) .NE. D_ONE) THEN
-#ifdef USE_DIV
-           CALL DARR_DIV_SCAL(M, F(1, Q), H(Q))
-#else
            D = D_ONE / H(Q)
-           ! CALL DSCAL(M, D, F(1, Q), 1)
-           CALL DARR_MUL_SCAL(M, F(1, Q), D)
-#endif
+           CALL DSCAL(M, D, F(1, Q), 1)
         END IF
         K(Q) = DNRM2(M, G(1, Q), 1)
         ! Ideally, K(Q) should be equal to 1.
         IF (K(Q) .NE. D_ONE) THEN
-#ifdef USE_DIV
-           CALL DARR_DIV_SCAL(M, G(1, Q), K(Q))
-           SIGMA(Q) = H(Q) / K(Q)
-#else
            D = D_ONE / K(Q)
-           ! CALL DSCAL(M, D, G(1, Q), 1)
-           CALL DARR_MUL_SCAL(M, G(1, Q), D)
            SIGMA(Q) = H(Q) * D
-#endif
+           CALL DSCAL(M, D, G(1, Q), 1)
         ELSE
            SIGMA(Q) = H(Q)
         END IF
         FCT = HYPOT(H(Q), K(Q))
         IF (FCT .NE. D_ONE) THEN
-#ifdef USE_DIV
-           H(Q) = H(Q) / FCT
-           K(Q) = K(Q) / FCT
-           CALL DARR_DIV_SCAL(M, V(1, Q), FCT)
-#else
            D = D_ONE / FCT
            H(Q) = H(Q) * D
            K(Q) = K(Q) * D
-           ! CALL DSCAL(M, D, V(1, Q), 1)
-           CALL DARR_MUL_SCAL(M, V(1, Q), D)
-#endif
+           CALL DSCAL(M, D, V(1, Q), 1)
         END IF
      END DO
   END IF

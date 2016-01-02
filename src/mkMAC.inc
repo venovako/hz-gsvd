@@ -11,14 +11,14 @@ ARFLAGS=rsv
 ifdef NDEBUG
 OPTFLAGS=-O$(NDEBUG)
 DBGFLAGS=-DNDEBUG
-FPUFLAGS=-DUSE_DIV
+FPUFLAGS=
 else # DEBUG
 OPTFLAGS=-O0
 DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan
-FPUFLAGS=-DUSE_DIV -ffpe-trap=invalid,zero,overflow
+FPUFLAGS=-ffpe-trap=invalid,zero,overflow
 endif # NDEBUG
 
 LIBFLAGS=-I../HZ
 CCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(C99FLAGS) $(FPUFLAGS)
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz -L/usr/local/lib -ltmglib -llapack -L/usr/lib -lblas
+LDFLAGS=-L../HZ -lhz -L/usr/local/lib -ltmglib -llapack -lrefblas
