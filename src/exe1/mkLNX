@@ -5,6 +5,9 @@ all: exe1.exe
 exe1.exe: exe1.o ../HZ/libhz.a mkLNX ../mkLNX.inc
 	$(FC) $(FCFLAGS) -mkl exe1.o -o$@ $(LDFLAGS)
 
+exe1.o: exe1.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -c exe1.F90
+
 clean:
 	-$(RM) exe1.o
 	-$(RM) exe1.exe
