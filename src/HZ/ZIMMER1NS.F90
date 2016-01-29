@@ -254,19 +254,19 @@ SUBROUTINE MY_DZIMMER1NS(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
 
               CALL DLACPY('A', Q, NC1, F(ITEMP, IFE1), LDF, FB(1, 1), LDAC)
               CALL DLACPY('A', Q, NC2, F(ITEMP, IFE2), LDF, FB(1, NC1 + 1), LDAC)
-              CALL DGEMM('N', 'N', Q, NCF, NCF, NCF, D_ONE, FB, LDAC, VB, LDAC, D_ZERO, GB, LDAC)
+              CALL DGEMM('N', 'N', Q, NCF, NCF, D_ONE, FB, LDAC, VB, LDAC, D_ZERO, GB, LDAC)
               CALL DLACPY('A', Q, NC1, GB(1, 1), LDAC, F(ITEMP, IFE1), LDF)
               CALL DLACPY('A', Q, NC2, GB(1, NC1 + 1), LDAC, F(ITEMP, IFE2), LDF)
 
               CALL DLACPY('A', Q, NC1, G(ITEMP, IFE1), LDG, FB(1, 1), LDAC)
               CALL DLACPY('A', Q, NC2, G(ITEMP, IFE2), LDG, FB(1, NC1 + 1), LDAC)
-              CALL DGEMM('N', 'N', Q, NCF, NCF, NCF, D_ONE, FB, LDAC, VB, LDAC, D_ZERO, GB, LDAC)
+              CALL DGEMM('N', 'N', Q, NCF, NCF, D_ONE, FB, LDAC, VB, LDAC, D_ZERO, GB, LDAC)
               CALL DLACPY('A', Q, NC1, GB(1, 1), LDAC, G(ITEMP, IFE1), LDG)
               CALL DLACPY('A', Q, NC2, GB(1, NC1 + 1), LDAC, G(ITEMP, IFE2), LDG)
 
               CALL DLACPY('A', Q, NC1, V(ITEMP, IFE1), LDV, FB(1, 1), LDAC)
               CALL DLACPY('A', Q, NC2, V(ITEMP, IFE2), LDV, FB(1, NC1 + 1), LDAC)
-              CALL DGEMM('N', 'N', Q, NCF, NCF, NCF, D_ONE, FB, LDAC, VB, LDAC, D_ZERO, GB, LDAC)
+              CALL DGEMM('N', 'N', Q, NCF, NCF, D_ONE, FB, LDAC, VB, LDAC, D_ZERO, GB, LDAC)
               CALL DLACPY('A', Q, NC1, GB(1, 1), LDAC, V(ITEMP, IFE1), LDV)
               CALL DLACPY('A', Q, NC2, GB(1, NC1 + 1), LDAC, V(ITEMP, IFE2), LDV)
            END DO
