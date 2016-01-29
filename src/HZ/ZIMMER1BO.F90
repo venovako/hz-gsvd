@@ -204,7 +204,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
            IFCS2 = IFCS(IPL(JBL))
            NCF = NC1 + NC2
 
-           ! Full block muliply for diagonal blocks FB_11, FB_22.
+           ! Full block multiply for diagonal blocks FB_11, FB_22.
 
            CALL DSYRK('U', 'T', NC1, M, D_ONE, F(1, IFCS1), LDF, D_ZERO, FB(1, 1), LDAC)
            CALL DSYRK('U', 'T', NC2, M, D_ONE, F(1, IFCS2), LDF, D_ZERO, FB(NC1 + 1, NC1 + 1), LDAC)
@@ -390,8 +390,6 @@ SUBROUTINE DZIMMER1BO(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, IPART,&
   INTEGER :: I_NC, I_IFC, I_IFCS, I_IPL, I_INVP, I_FB, I_GB, I_VB
   LOGICAL :: Q_LWORK, Q_LIWORK
 
-  EXTERNAL :: DLASET
-
   !DIR$ ASSUME_ALIGNED F:64,G:64,V:64, H:64,K:64,SIGMA:64, WORK:64,IWORK:64
   !DIR$ ASSUME (MOD(LDF, 8) .EQ. 0)
   !DIR$ ASSUME (MOD(LDG, 8) .EQ. 0)
@@ -515,12 +513,8 @@ SUBROUTINE DZIMMER1BO(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, IPART,&
   OPT_LIWORK = 2 * A_MAXNBL + 3 * A_MSHUFL
 
   IF (.NOT. FAST) THEN
-     IF (Q_LWORK) THEN
-        WORK(1) = DBLE(OPT_LWORK)
-     END IF
-     IF (Q_LIWORK) THEN
-        IWORK(1) = OPT_LIWORK
-     END IF
+     IF (Q_LWORK) WORK(1) = DBLE(OPT_LWORK)
+     IF (Q_LIWORK) IWORK(1) = OPT_LIWORK
      IF (Q_LWORK .OR. Q_LIWORK) THEN
         INFO(2) = LCOLV
         RETURN
