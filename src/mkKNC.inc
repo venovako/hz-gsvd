@@ -4,8 +4,8 @@ CC=h5pcc
 FC=h5pfc
 AR=xiar
 
-C99FLAGS=-DHAVE_PHI -qopenmp -std=gnu99 -fexceptions -traceback
-FORFLAGS=-DHAVE_PHI -qopenmp -standard-semantics -fexceptions -traceback
+C99FLAGS=-DHAVE_KNC -qopenmp -std=gnu99 -fexceptions -traceback
+FORFLAGS=-DHAVE_KNC -qopenmp -standard-semantics -fexceptions -traceback
 ARFLAGS=-qnoipo -lib rsv
 
 ifdef NDEBUG

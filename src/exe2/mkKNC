@@ -1,11 +1,11 @@
-include ../mkPHI.inc
+include ../mkKNC.inc
 
 all: exe2.exe
 
-exe2.exe: exe2.o ../HZ/libhz.a mkPHI ../mkPHI.inc
+exe2.exe: exe2.o ../HZ/libhz.a mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -mkl exe2.o -o$@ $(LDFLAGS)
 
-exe2.o: exe2.F90 ../HZ/hz.mod mkPHI ../mkPHI.inc
+exe2.o: exe2.F90 ../HZ/hz.mod mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -c exe2.F90
 
 clean:

@@ -1,11 +1,11 @@
-include ../mkPHI.inc
+include ../mkKNC.inc
 
 all: DGSVD.exe
 
-DGSVD.exe: DGSVD.o ../HZ/libhz.a mkPHI ../mkPHI.inc
+DGSVD.exe: DGSVD.o ../HZ/libhz.a mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -mkl DGSVD.o -o$@ $(LDFLAGS)
 
-DGSVD.o: DGSVD.F90 ../HZ/hz.mod mkPHI ../mkPHI.inc
+DGSVD.o: DGSVD.F90 ../HZ/hz.mod mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -c DGSVD.F90
 
 clean:

@@ -17,7 +17,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   LOGICAL :: INTRAN
   INTEGER(8) :: NROTIN(2)
 
-#ifdef HAVE_PHI
+#ifdef HAVE_KNC
   DOUBLE PRECISION :: CSFP(8)
 #else
   DOUBLE PRECISION :: CSFP(4)
@@ -186,7 +186,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
                  COSP = MY_DFMA(MY_DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
                  SINP = MY_DFMA(MY_DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
               END IF
-#ifdef HAVE_PHI
+#ifdef HAVE_KNC
               D = D_ONE / FCT
               !DIR$ VECTOR ALWAYS, ALIGNED
               DO I = 1, 8

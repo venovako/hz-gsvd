@@ -1,0 +1,19 @@
+include mkKNC.inc
+
+all:
+	$(MAKE) -C HZ -f mkKNC all
+	$(MAKE) -C genHZ -f mkKNC all
+	$(MAKE) -C DGSVD -f mkKNC all
+	$(MAKE) -C exe0 -f mkKNC all
+	$(MAKE) -C exe1 -f mkKNC all
+	$(MAKE) -C exe2 -f mkKNC all
+#	$(MAKE) -C exe3 -f mkKNC all
+
+clean:
+	$(MAKE) -C HZ -f mkKNC clean
+	$(MAKE) -C genHZ -f mkKNC clean
+	$(MAKE) -C DGSVD -f mkKNC clean
+	$(MAKE) -C exe0 -f mkKNC clean
+	$(MAKE) -C exe1 -f mkKNC clean
+	$(MAKE) -C exe2 -f mkKNC clean
+#	$(MAKE) -C exe3 -f mkKNC clean

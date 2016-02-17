@@ -1,4 +1,4 @@
-include ../mkPHI.inc
+include ../mkKNC.inc
 
 XNETLIB_F=Xaxpy.f Xdot.f Xgemm.f Xgemv.f Xger.f Xlagsy.f Xlaran.f Xlarnd.f Xlarnv.f Xlaror.f Xlaruv.f Xlaset.f Xnrm2.f Xscal.f Xsymv.f Xsyr2.f
 XNETLIB_O=$(XNETLIB_F:.f=.o)
@@ -13,13 +13,13 @@ EXE=genHZ.exe
 
 all: $(EXE)
 
-$(EXE): $(OBJS) mkPHI ../mkPHI.inc
+$(EXE): $(OBJS) mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -mkl $(OBJS) -o$@ $(LDFLAGS)
 
-$(OBJ_90): %.o: %.F90 mkPHI ../mkPHI.inc
+$(OBJ_90): %.o: %.F90 mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -c $<
 
-$(OBJ): %.o: %.f mkPHI ../mkPHI.inc
+$(OBJ): %.o: %.f mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -c $<
 
 clean:
