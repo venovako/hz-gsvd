@@ -1,0 +1,13 @@
+include ../mkPWR.inc
+
+all: DGSVD.exe
+
+DGSVD.exe: DGSVD.o ../HZ/libhz.a mkPWR ../mkPWR.inc
+	$(FC) $(FCFLAGS) DGSVD.o -o$@ $(LDFLAGS)
+
+DGSVD.o: DGSVD.F90 ../HZ/hz.mod mkPWR ../mkPWR.inc
+	$(FC) $(FCFLAGS) -c DGSVD.F90
+
+clean:
+	-$(RM) DGSVD.o
+	-$(RM) DGSVD.exe

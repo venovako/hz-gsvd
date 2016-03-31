@@ -1,0 +1,19 @@
+include mkPWR.inc
+
+all:
+	$(MAKE) -C HZ -f mkPWR all
+	$(MAKE) -C genHZ -f mkPWR all
+	$(MAKE) -C DGSVD -f mkPWR all
+	$(MAKE) -C exe0 -f mkPWR all
+	$(MAKE) -C exe1 -f mkPWR all
+	$(MAKE) -C exe2 -f mkPWR all
+#	$(MAKE) -C exe3 -f mkPWR all
+
+clean:
+	$(MAKE) -C HZ -f mkPWR clean
+	$(MAKE) -C genHZ -f mkPWR clean
+	$(MAKE) -C DGSVD -f mkPWR clean
+	$(MAKE) -C exe0 -f mkPWR clean
+	$(MAKE) -C exe1 -f mkPWR clean
+	$(MAKE) -C exe2 -f mkPWR clean
+#	$(MAKE) -C exe3 -f mkPWR clean

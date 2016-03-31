@@ -17,7 +17,7 @@ program genHZ
   logical :: fex
   integer(hid_t) :: fid, gid
 
-  integer :: oseed(4), iseed(4), lda, npos, k, l, m, p
+  integer :: oseed(4), iseed(4), lda, npos, k, l, m, p, lwork
   double precision :: tola, tolb, ulp, unfl
   real(WP) :: h
 
@@ -30,7 +30,7 @@ program genHZ
   real(WP), allocatable :: xf(:,:), xg(:,:), xx(:,:)
 
   double precision, external :: dlamch, dlange
-  external :: dggsvp
+  external :: dggsvp3
 
   call readcl(sigma_f, sigma_g, lambda_x, seed, n, fil, grp, &
        idist_f, eps_f, scal_f, idist_g, eps_g, scal_g, idist_x, eps_x, scal_x, info)
@@ -143,11 +143,17 @@ program genHZ
   allocate(dv(lda,n))
   allocate(dq(lda,n))
 
-  allocate(tau(n))
-  allocate(dwork(p))
   allocate(iwork(n))
+  allocate(tau(n))
 
   p = n
+  tola = zero
+  tolb = zero
+  lwork = -1
+  call dggsvp3('U', 'V', 'Q', m, p, n, df, lda, dg, lda, tola, tola, k, l, du, lda, dv, lda, dq, lda, iwork, tau, tolb, lwork, info)
+  lwork = max(1,ceiling(tolb))
+  allocate(dwork(lwork))
+
   tola = dlange('1', m, n, df, lda, dwork)
   tolb = dlange('1', p, n, dg, lda, dwork)
   ulp = dlamch('Precision')
@@ -155,15 +161,15 @@ program genHZ
   tola = max(m,n) * max(tola,unfl) * ulp
   tolb = max(p,n) * max(tolb,unfl) * ulp
 
-  call dggsvp('U', 'V', 'Q', m, p, n, df, lda, dg, lda, tola, tolb, k, l, du, lda, dv, lda, dq, lda, iwork, tau, dwork, info)
+  call dggsvp3('U', 'V', 'Q', m, p, n, df, lda, dg, lda, tola, tolb, k, l, du, lda, dv, lda, dq, lda, iwork, tau, dwork, lwork, info)
   if (info .ne. 0) then
     write (*,*) info
-    stop 'dggsvp'
+    stop 'dggsvp3'
   end if
 
-  deallocate(iwork)
   deallocate(dwork)
   deallocate(tau)
+  deallocate(iwork)
 
   call h5open_f(info)
   if (info .ne. 0) then
@@ -295,9 +301,9 @@ contains
       write (*,*) 'LAMBDA_X: double precision(N); as read/generated'
       write (*,*) 'F       : double precision(LDA,N) = U_F \SIGMA_F X'
       write (*,*) 'G       : double precision(LDA,N) = U_G \SIGMA_G X'
-      write (*,*) 'U       : double precision(LDA,N); see LaPACK dggsvp.f'
-      write (*,*) 'V       : double precision(LDA,N); see LaPACK dggsvp.f'
-      write (*,*) 'Q       : double precision(LDA,N); see LaPACK dggsvp.f'
+      write (*,*) 'U       : double precision(LDA,N); see LaPACK dggsvp3.f'
+      write (*,*) 'V       : double precision(LDA,N); see LaPACK dggsvp3.f'
+      write (*,*) 'Q       : double precision(LDA,N); see LaPACK dggsvp3.f'
       write (*,*) 'TOL     : double precision(2) = (/ TOLA, TOLB /); see LaPACK dggsvd.f'
       info = 1
       return
