@@ -16,4 +16,6 @@ endif # NDEBUG
 
 LIBFLAGS=-I../HZ
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS)
-LDFLAGS=-L../HZ -lhz -L$(HOME)/lapack -ltmglib -llapack -lrefblas
+#LAPACK=-L$(HOME)/lapack -ltmglib -llapack -lrefblas
+LAPACK=-lessl -L$(HOME)/lapack -ltmglib -lessl -llapack -lessl -lrefblas -lessl
+LDFLAGS=-L../HZ -lhz $(LAPACK)
