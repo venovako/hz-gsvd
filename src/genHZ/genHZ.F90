@@ -5,7 +5,12 @@ program genHZ
 
   implicit none
 
-  include 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 
   double precision, parameter :: zero = 0.0d0
 

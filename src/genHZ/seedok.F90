@@ -2,7 +2,12 @@ pure subroutine seedok(iseed, info)
 
   implicit none
 
-  include 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 
   integer, intent(in) :: iseed(4)
   integer, intent(out) :: info

@@ -2,7 +2,12 @@ subroutine genlam(n, iseed, idist, eps, scal, lam, npos, info)
 
   implicit none
 
-  include 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 
   integer, intent(in) :: n, idist
   integer, intent(inout) :: iseed(4)

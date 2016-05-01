@@ -54,7 +54,12 @@
 *  =====================================================================
       FUNCTION XNRM2(N,X,INCX)
 *
-      INCLUDE 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
       REAL(WP) XNRM2
 *
 *  -- Reference BLAS level1 routine (version 3.4.0) --

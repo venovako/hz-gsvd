@@ -2,7 +2,12 @@ pure subroutine seedix(ix, iseed, info)
 
   implicit none
 
-  include 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 
   integer, intent(in) :: ix
   integer, intent(out) :: iseed(4), info

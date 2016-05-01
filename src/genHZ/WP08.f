@@ -1,2 +1,0 @@
-      INTEGER WP
-      PARAMETER (WP=08)

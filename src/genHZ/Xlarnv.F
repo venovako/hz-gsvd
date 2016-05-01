@@ -97,7 +97,12 @@
 *  =====================================================================
       SUBROUTINE XLARNV( IDIST, ISEED, N, X )
 *
-      INCLUDE 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 *
 *  -- LAPACK auxiliary routine (version 3.4.2) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --

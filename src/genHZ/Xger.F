@@ -130,7 +130,12 @@
 *  =====================================================================
       SUBROUTINE XGER(M,N,ALPHA,X,INCX,Y,INCY,A,LDA)
 *
-      INCLUDE 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 *
 *  -- Reference BLAS level2 routine (version 3.4.0) --
 *  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --

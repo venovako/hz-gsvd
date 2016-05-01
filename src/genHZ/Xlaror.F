@@ -146,7 +146,12 @@
 *  =====================================================================
       SUBROUTINE XLAROR( SIDE, INIT, M, N, A, LDA, ISEED, X, INFO )
 *
-      INCLUDE 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 *
 *  -- LAPACK auxiliary routine (version 3.4.0) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --

@@ -10,4 +10,5 @@ exe0.o: exe0.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
 
 clean:
 	-$(RM) exe0.o
+	-$(RM) *.optrpt
 	-$(RM) exe0.exe

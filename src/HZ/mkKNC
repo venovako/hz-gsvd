@@ -14,5 +14,6 @@ hz.mod HZ.o: BACKSH.F90 BLAS_SET_NUM_THREADS.F90 GET_IOUNIT.F90 GET_NTHR.F90 HZ.
 
 clean:
 	-$(RM) $(OBJS)
+	-$(RM) *.optrpt
 	-$(RM) $(MODS)
 	-$(RM) $(LIBS)

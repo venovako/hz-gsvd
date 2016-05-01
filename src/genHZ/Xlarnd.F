@@ -73,7 +73,12 @@
 *  =====================================================================
       FUNCTION XLARND( IDIST, ISEED )
 *
-      INCLUDE 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
       REAL(WP) XLARND
 *
 *  -- LAPACK auxiliary routine (version 3.4.0) --

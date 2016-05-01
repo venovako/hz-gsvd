@@ -1,4 +1,4 @@
-*> \brief \b XGEMV
+*> \brief \b XSYMV
 *
 *  =========== DOCUMENTATION ===========
 *
@@ -8,12 +8,12 @@
 *  Definition:
 *  ===========
 *
-*       SUBROUTINE XGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
+*       SUBROUTINE XSYMV(UPLO,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
 * 
 *       .. Scalar Arguments ..
 *       REAL(WP) ALPHA,BETA
-*       INTEGER INCX,INCY,LDA,M,N
-*       CHARACTER TRANS
+*       INTEGER INCX,INCY,LDA,N
+*       CHARACTER UPLO
 *       ..
 *       .. Array Arguments ..
 *       REAL(WP) A(LDA,*),X(*),Y(*)
@@ -25,41 +25,35 @@
 *>
 *> \verbatim
 *>
-*> XGEMV  performs one of the matrix-vector operations
+*> XSYMV  performs the matrix-vector  operation
 *>
-*>    y := alpha*A*x + beta*y,   or   y := alpha*A**T*x + beta*y,
+*>    y := alpha*A*x + beta*y,
 *>
-*> where alpha and beta are scalars, x and y are vectors and A is an
-*> m by n matrix.
+*> where alpha and beta are scalars, x and y are n element vectors and
+*> A is an n by n symmetric matrix.
 *> \endverbatim
 *
 *  Arguments:
 *  ==========
 *
-*> \param[in] TRANS
+*> \param[in] UPLO
 *> \verbatim
-*>          TRANS is CHARACTER*1
-*>           On entry, TRANS specifies the operation to be performed as
+*>          UPLO is CHARACTER*1
+*>           On entry, UPLO specifies whether the upper or lower
+*>           triangular part of the array A is to be referenced as
 *>           follows:
 *>
-*>              TRANS = 'N' or 'n'   y := alpha*A*x + beta*y.
+*>              UPLO = 'U' or 'u'   Only the upper triangular part of A
+*>                                  is to be referenced.
 *>
-*>              TRANS = 'T' or 't'   y := alpha*A**T*x + beta*y.
-*>
-*>              TRANS = 'C' or 'c'   y := alpha*A**T*x + beta*y.
-*> \endverbatim
-*>
-*> \param[in] M
-*> \verbatim
-*>          M is INTEGER
-*>           On entry, M specifies the number of rows of the matrix A.
-*>           M must be at least zero.
+*>              UPLO = 'L' or 'l'   Only the lower triangular part of A
+*>                                  is to be referenced.
 *> \endverbatim
 *>
 *> \param[in] N
 *> \verbatim
 *>          N is INTEGER
-*>           On entry, N specifies the number of columns of the matrix A.
+*>           On entry, N specifies the order of the matrix A.
 *>           N must be at least zero.
 *> \endverbatim
 *>
@@ -72,8 +66,14 @@
 *> \param[in] A
 *> \verbatim
 *>          A is REAL(WP) array of DIMENSION ( LDA, n ).
-*>           Before entry, the leading m by n part of the array A must
-*>           contain the matrix of coefficients.
+*>           Before entry with  UPLO = 'U' or 'u', the leading n by n
+*>           upper triangular part of the array A must contain the upper
+*>           triangular part of the symmetric matrix and the strictly
+*>           lower triangular part of A is not referenced.
+*>           Before entry with UPLO = 'L' or 'l', the leading n by n
+*>           lower triangular part of the array A must contain the lower
+*>           triangular part of the symmetric matrix and the strictly
+*>           upper triangular part of A is not referenced.
 *> \endverbatim
 *>
 *> \param[in] LDA
@@ -81,17 +81,15 @@
 *>          LDA is INTEGER
 *>           On entry, LDA specifies the first dimension of A as declared
 *>           in the calling (sub) program. LDA must be at least
-*>           max( 1, m ).
+*>           max( 1, n ).
 *> \endverbatim
 *>
 *> \param[in] X
 *> \verbatim
-*>          X is REAL(WP) array of DIMENSION at least
-*>           ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'
-*>           and at least
-*>           ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.
-*>           Before entry, the incremented array X must contain the
-*>           vector x.
+*>          X is REAL(WP) array of dimension at least
+*>           ( 1 + ( n - 1 )*abs( INCX ) ).
+*>           Before entry, the incremented array X must contain the n
+*>           element vector x.
 *> \endverbatim
 *>
 *> \param[in] INCX
@@ -110,13 +108,11 @@
 *>
 *> \param[in,out] Y
 *> \verbatim
-*>          Y is REAL(WP) array of DIMENSION at least
-*>           ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'
-*>           and at least
-*>           ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.
-*>           Before entry with BETA non-zero, the incremented array Y
-*>           must contain the vector y. On exit, Y is overwritten by the
-*>           updated vector y.
+*>          Y is REAL(WP) array of dimension at least
+*>           ( 1 + ( n - 1 )*abs( INCY ) ).
+*>           Before entry, the incremented array Y must contain the n
+*>           element vector y. On exit, Y is overwritten by the updated
+*>           vector y.
 *> \endverbatim
 *>
 *> \param[in] INCY
@@ -154,9 +150,14 @@
 *> \endverbatim
 *>
 *  =====================================================================
-      SUBROUTINE XGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
+      SUBROUTINE XSYMV(UPLO,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
 *
-      INCLUDE 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 *
 *  -- Reference BLAS level2 routine (version 3.4.0) --
 *  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
@@ -165,8 +166,8 @@
 *
 *     .. Scalar Arguments ..
       REAL(WP) ALPHA,BETA
-      INTEGER INCX,INCY,LDA,M,N
-      CHARACTER TRANS
+      INTEGER INCX,INCY,LDA,N
+      CHARACTER UPLO
 *     ..
 *     .. Array Arguments ..
       REAL(WP) A(LDA,*),X(*),Y(*)
@@ -179,8 +180,8 @@
       PARAMETER (ONE=1.0E+0_WP,ZERO=0.0E+0_WP)
 *     ..
 *     .. Local Scalars ..
-      REAL(WP) TEMP
-      INTEGER I,INFO,IX,IY,J,JX,JY,KX,KY,LENX,LENY
+      REAL(WP) TEMP1,TEMP2
+      INTEGER I,INFO,IX,IY,J,JX,JY,KX,KY
 *     ..
 *     .. External Functions ..
       LOGICAL LSAME
@@ -196,76 +197,65 @@
 *     Test the input parameters.
 *
       INFO = 0
-      IF (.NOT.LSAME(TRANS,'N') .AND. .NOT.LSAME(TRANS,'T') .AND.
-     +    .NOT.LSAME(TRANS,'C')) THEN
+      IF (.NOT.LSAME(UPLO,'U') .AND. .NOT.LSAME(UPLO,'L')) THEN
           INFO = 1
-      ELSE IF (M.LT.0) THEN
-          INFO = 2
       ELSE IF (N.LT.0) THEN
-          INFO = 3
-      ELSE IF (LDA.LT.MAX(1,M)) THEN
-          INFO = 6
+          INFO = 2
+      ELSE IF (LDA.LT.MAX(1,N)) THEN
+          INFO = 5
       ELSE IF (INCX.EQ.0) THEN
-          INFO = 8
+          INFO = 7
       ELSE IF (INCY.EQ.0) THEN
-          INFO = 11
+          INFO = 10
       END IF
       IF (INFO.NE.0) THEN
-          CALL XERBLA('XGEMV ',INFO)
+          CALL XERBLA('XSYMV ',INFO)
           RETURN
       END IF
 *
 *     Quick return if possible.
 *
-      IF ((M.EQ.0) .OR. (N.EQ.0) .OR.
-     +    ((ALPHA.EQ.ZERO).AND. (BETA.EQ.ONE))) RETURN
+      IF ((N.EQ.0) .OR. ((ALPHA.EQ.ZERO).AND. (BETA.EQ.ONE))) RETURN
 *
-*     Set  LENX  and  LENY, the lengths of the vectors x and y, and set
-*     up the start points in  X  and  Y.
+*     Set up the start points in  X  and  Y.
 *
-      IF (LSAME(TRANS,'N')) THEN
-          LENX = N
-          LENY = M
-      ELSE
-          LENX = M
-          LENY = N
-      END IF
       IF (INCX.GT.0) THEN
           KX = 1
       ELSE
-          KX = 1 - (LENX-1)*INCX
+          KX = 1 - (N-1)*INCX
       END IF
       IF (INCY.GT.0) THEN
           KY = 1
       ELSE
-          KY = 1 - (LENY-1)*INCY
+          KY = 1 - (N-1)*INCY
       END IF
 *
 *     Start the operations. In this version the elements of A are
-*     accessed sequentially with one pass through A.
+*     accessed sequentially with one pass through the triangular part
+*     of A.
 *
 *     First form  y := beta*y.
 *
       IF (BETA.NE.ONE) THEN
           IF (INCY.EQ.1) THEN
               IF (BETA.EQ.ZERO) THEN
-                  DO 10 I = 1,LENY
+                  DO 10 I = 1,N
                       Y(I) = ZERO
    10             CONTINUE
               ELSE
-                  DO 20 I = 1,LENY
+                  DO 20 I = 1,N
                       Y(I) = BETA*Y(I)
    20             CONTINUE
               END IF
           ELSE
               IY = KY
               IF (BETA.EQ.ZERO) THEN
-                  DO 30 I = 1,LENY
+                  DO 30 I = 1,N
                       Y(IY) = ZERO
                       IY = IY + INCY
    30             CONTINUE
               ELSE
-                  DO 40 I = 1,LENY
+                  DO 40 I = 1,N
                       Y(IY) = BETA*Y(IY)
                       IY = IY + INCY
    40             CONTINUE
@@ -273,57 +263,71 @@
           END IF
       END IF
       IF (ALPHA.EQ.ZERO) RETURN
-      IF (LSAME(TRANS,'N')) THEN
+      IF (LSAME(UPLO,'U')) THEN
 *
-*        Form  y := alpha*A*x + y.
+*        Form  y  when A is stored in upper triangle.
 *
-          JX = KX
-          IF (INCY.EQ.1) THEN
+          IF ((INCX.EQ.1) .AND. (INCY.EQ.1)) THEN
               DO 60 J = 1,N
-                  IF (X(JX).NE.ZERO) THEN
-                      TEMP = ALPHA*X(JX)
-                      DO 50 I = 1,M
-                          Y(I) = Y(I) + TEMP*A(I,J)
-   50                 CONTINUE
-                  END IF
-                  JX = JX + INCX
+                  TEMP1 = ALPHA*X(J)
+                  TEMP2 = ZERO
+                  DO 50 I = 1,J - 1
+                      Y(I) = Y(I) + TEMP1*A(I,J)
+                      TEMP2 = TEMP2 + A(I,J)*X(I)
+   50             CONTINUE
+                  Y(J) = Y(J) + TEMP1*A(J,J) + ALPHA*TEMP2
    60         CONTINUE
           ELSE
+              JX = KX
+              JY = KY
               DO 80 J = 1,N
-                  IF (X(JX).NE.ZERO) THEN
-                      TEMP = ALPHA*X(JX)
-                      IY = KY
-                      DO 70 I = 1,M
-                          Y(IY) = Y(IY) + TEMP*A(I,J)
-                          IY = IY + INCY
-   70                 CONTINUE
-                  END IF
+                  TEMP1 = ALPHA*X(JX)
+                  TEMP2 = ZERO
+                  IX = KX
+                  IY = KY
+                  DO 70 I = 1,J - 1
+                      Y(IY) = Y(IY) + TEMP1*A(I,J)
+                      TEMP2 = TEMP2 + A(I,J)*X(IX)
+                      IX = IX + INCX
+                      IY = IY + INCY
+   70             CONTINUE
+                  Y(JY) = Y(JY) + TEMP1*A(J,J) + ALPHA*TEMP2
                   JX = JX + INCX
+                  JY = JY + INCY
    80         CONTINUE
           END IF
       ELSE
 *
-*        Form  y := alpha*A**T*x + y.
+*        Form  y  when A is stored in lower triangle.
 *
-          JY = KY
-          IF (INCX.EQ.1) THEN
+          IF ((INCX.EQ.1) .AND. (INCY.EQ.1)) THEN
               DO 100 J = 1,N
-                  TEMP = ZERO
-                  DO 90 I = 1,M
-                      TEMP = TEMP + A(I,J)*X(I)
+                  TEMP1 = ALPHA*X(J)
+                  TEMP2 = ZERO
+                  Y(J) = Y(J) + TEMP1*A(J,J)
+                  DO 90 I = J + 1,N
+                      Y(I) = Y(I) + TEMP1*A(I,J)
+                      TEMP2 = TEMP2 + A(I,J)*X(I)
    90             CONTINUE
-                  Y(JY) = Y(JY) + ALPHA*TEMP
-                  JY = JY + INCY
+                  Y(J) = Y(J) + ALPHA*TEMP2
   100         CONTINUE
           ELSE
+              JX = KX
+              JY = KY
               DO 120 J = 1,N
-                  TEMP = ZERO
-                  IX = KX
-                  DO 110 I = 1,M
-                      TEMP = TEMP + A(I,J)*X(IX)
+                  TEMP1 = ALPHA*X(JX)
+                  TEMP2 = ZERO
+                  Y(JY) = Y(JY) + TEMP1*A(J,J)
+                  IX = JX
+                  IY = JY
+                  DO 110 I = J + 1,N
                       IX = IX + INCX
+                      IY = IY + INCY
+                      Y(IY) = Y(IY) + TEMP1*A(I,J)
+                      TEMP2 = TEMP2 + A(I,J)*X(IX)
   110             CONTINUE
-                  Y(JY) = Y(JY) + ALPHA*TEMP
+                  Y(JY) = Y(JY) + ALPHA*TEMP2
+                  JX = JX + INCX
                   JY = JY + INCY
   120         CONTINUE
           END IF
@@ -331,6 +335,6 @@
 *
       RETURN
 *
-*     End of XGEMV .
+*     End of XSYMV .
 *
       END

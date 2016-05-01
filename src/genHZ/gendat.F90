@@ -2,7 +2,12 @@ subroutine gendat(n, iseed, xs_f, xs_g, xl_x, xf, xg, xx, df, dg, dx, lda, xwork
 
   implicit none
 
-  include 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 
   double precision, parameter :: dzero = 0.0d0
   real(WP), parameter :: zero = 0.0e0_WP, one = 1.0e0_WP

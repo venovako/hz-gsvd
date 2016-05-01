@@ -2,7 +2,12 @@ subroutine txtlam(fn, n, lam, npos, info)
 
   implicit none
 
-  include 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 
   character(len=*), intent(in) :: fn
   integer, intent(in) :: n

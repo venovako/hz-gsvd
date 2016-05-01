@@ -110,7 +110,12 @@
 *  =====================================================================
       SUBROUTINE XLASET( UPLO, M, N, ALPHA, BETA, A, LDA )
 *
-      INCLUDE 'WP.f'
+      INTEGER WP
+#ifdef USE_GNU
+      PARAMETER (WP=10)
+#else
+      PARAMETER (WP=16)
+#endif
 *
 *  -- LAPACK auxiliary routine (version 3.4.2) --
 *  -- LAPACK is a software package provided by Univ. of Tennessee,    --

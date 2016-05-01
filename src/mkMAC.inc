@@ -7,7 +7,7 @@ RM=rm -rf
 FC=$(H5FC)
 AR=ar
 
-FORFLAGS=-fopenmp -fexceptions -frecursive -march=native -Wa,-q
+FORFLAGS=-DUSE_GNU -fopenmp -fexceptions -frecursive -march=native -Wa,-q
 C99FLAGS=-fexceptions -march=native -ffp-contract=on -integrated-as
 ARFLAGS=rsv
 

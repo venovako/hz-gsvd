@@ -1,7 +1,7 @@
 include ../mkMAC.inc
 
-XNETLIB_F=Xaxpy.f Xdot.f Xgemm.f Xgemv.f Xger.f Xlagsy.f Xlaran.f Xlarnd.f Xlarnv.f Xlaror.f Xlaruv.f Xlaset.f Xnrm2.f Xscal.f Xsymv.f Xsyr2.f
-XNETLIB_O=$(XNETLIB_F:.f=.o)
+XNETLIB_F=Xaxpy.F Xdot.F Xgemm.F Xgemv.F Xger.F Xlagsy.F Xlaran.F Xlarnd.F Xlarnv.F Xlaror.F Xlaruv.F Xlaset.F Xnrm2.F Xscal.F Xsymv.F Xsyr2.F
+XNETLIB_O=$(XNETLIB_F:.F=.o)
 
 GENHZ_F90=genHZ.F90 gendat.F90 genlam.F90 seedix.F90 seedok.F90 txtlam.F90
 GENHZ_O90=$(GENHZ_F90:.F90=.o)
@@ -19,7 +19,7 @@ $(EXE): $(OBJS) mkMAC ../mkMAC.inc
 $(OBJ_90): %.o: %.F90 mkMAC ../mkMAC.inc
 	$(FC) $(FCFLAGS) -c $<
 
-$(OBJ): %.o: %.f mkMAC ../mkMAC.inc
+$(OBJ): %.o: %.F mkMAC ../mkMAC.inc
 	$(FC) $(FCFLAGS) -c $<
 
 clean:

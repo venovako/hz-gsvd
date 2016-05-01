@@ -10,4 +10,5 @@ DGSVD.o: DGSVD.F90 ../HZ/hz.mod mkKNC ../mkKNC.inc
 
 clean:
 	-$(RM) DGSVD.o
+	-$(RM) *.optrpt
 	-$(RM) DGSVD.exe
