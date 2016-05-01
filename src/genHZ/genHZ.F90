@@ -150,7 +150,7 @@ program genHZ
   tola = zero
   tolb = zero
   lwork = -1
-  call dggsvp3('U', 'V', 'Q', m, p, n, df, lda, dg, lda, tola, tola, k, l, du, lda, dv, lda, dq, lda, iwork, tau, tolb, lwork, info)
+  call dggsvp3('U', 'V', 'Q', m, p, n, df,lda, dg,lda, tola,tola, k, l, du,lda, dv,lda, dq,lda, iwork, tau, tolb, lwork, info)
   lwork = max(1,ceiling(tolb))
   allocate(dwork(lwork))
 
@@ -161,7 +161,7 @@ program genHZ
   tola = max(m,n) * max(tola,unfl) * ulp
   tolb = max(p,n) * max(tolb,unfl) * ulp
 
-  call dggsvp3('U', 'V', 'Q', m, p, n, df, lda, dg, lda, tola, tolb, k, l, du, lda, dv, lda, dq, lda, iwork, tau, dwork, lwork, info)
+  call dggsvp3('U', 'V', 'Q', m, p, n, df,lda, dg,lda, tola,tolb, k, l, du,lda, dv,lda, dq,lda, iwork, tau, dwork, lwork, info)
   if (info .ne. 0) then
     write (*,*) info
     stop 'dggsvp3'

@@ -25,4 +25,5 @@ $(OBJ): %.o: %.f mkLNX ../mkLNX.inc
 clean:
 	-$(RM) $(EXE)
 	-$(RM) *__genmod.*
+	-$(RM) *.optrpt
 	-$(RM) $(OBJS)

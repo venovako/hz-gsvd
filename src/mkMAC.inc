@@ -1,11 +1,14 @@
+HDF5=$(HOME)/hdf5_gnu-nompi
+H5FC=$(HDF5)/bin/h5fc #h5pfc
+H5CC=$(HDF5)/bin/h5cc #h5pcc
+
 RM=rm -rf
 
-CC=h5pcc
-FC=h5pfc
+FC=$(H5FC)
 AR=ar
 
-C99FLAGS=-fexceptions
-FORFLAGS=-fopenmp
+FORFLAGS=-fopenmp -fexceptions -frecursive -march=native -Wa,-q
+C99FLAGS=-fexceptions -march=native -ffp-contract=on -integrated-as
 ARFLAGS=rsv
 
 ifdef NDEBUG
@@ -19,6 +22,5 @@ FPUFLAGS=-ffpe-trap=invalid,zero,overflow
 endif # NDEBUG
 
 LIBFLAGS=-I../HZ
-CCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(C99FLAGS) $(FPUFLAGS)
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
 LDFLAGS=-L../HZ -lhz -L/usr/local/lib -ltmglib -llapack -lrefblas

@@ -20,7 +20,7 @@ $(OBJ_90): %.o: %.F90 mkPWR ../mkPWR.inc
 	$(FC) $(FCFLAGS) -c $<
 
 $(OBJ): %.o: %.f mkPWR ../mkPWR.inc
-	xlf_r $(FCFLAGS) -qfloat=nans:subnormals -qmaxmem=-1 -qnosave -qsclk=micro -qtune=pwr8:smt8 -c $<
+	xlf_r $(FCFLAGS) -c $<
 
 clean:
 	-$(RM) $(EXE)

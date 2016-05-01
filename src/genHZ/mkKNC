@@ -25,4 +25,5 @@ $(OBJ): %.o: %.f mkKNC ../mkKNC.inc
 clean:
 	-$(RM) $(EXE)
 	-$(RM) *__genmod.*
+	-$(RM) *.optrpt
 	-$(RM) $(OBJS)
