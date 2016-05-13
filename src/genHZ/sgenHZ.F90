@@ -1,4 +1,4 @@
-program genHZ
+program sgenHZ
 
   use HDF5
   use H5LT
@@ -12,30 +12,30 @@ program genHZ
       PARAMETER (WP=16)
 #endif
 
-  double precision, parameter :: zero = 0.0d0
+  real, parameter :: zero = 0.0e0
 
   ! command-line parameters
   integer :: seed, n, idist_f, idist_g, idist_x, info
-  double precision :: eps_f, scal_f, eps_g, scal_g, eps_x, scal_x
+  real :: eps_f, scal_f, eps_g, scal_g, eps_x, scal_x
   character(len=256) :: sigma_f, sigma_g, lambda_x, fil, grp
 
   logical :: fex
   integer(hid_t) :: fid, gid
 
   integer :: oseed(4), iseed(4), lda, npos, k, l, m, p, lwork
-  double precision :: tola, tolb, ulp, unfl
+  real :: tola, tolb, ulp, unfl
   real(WP) :: h
 
   integer, allocatable :: iwork(:)
 
-  double precision, allocatable :: ds_f(:), ds_g(:), ds(:), dl_x(:), tau(:), dwork(:)
+  real, allocatable :: ds_f(:), ds_g(:), ds(:), dl_x(:), tau(:), dwork(:)
   real(WP), allocatable :: xs_f(:), xs_g(:), xl_x(:), xwork(:)
 
-  double precision, allocatable :: df(:,:), dg(:,:), du(:,:), dv(:,:), dq(:,:)
+  real, allocatable :: df(:,:), dg(:,:), du(:,:), dv(:,:), dq(:,:)
   real(WP), allocatable :: xf(:,:), xg(:,:), xx(:,:)
 
-  double precision, external :: dlamch, dlange
-  external :: dggsvp3
+  real, external :: slamch, slange
+  external :: sggsvp3
 
   call readcl(sigma_f, sigma_g, lambda_x, seed, n, fil, grp, &
        idist_f, eps_f, scal_f, idist_g, eps_g, scal_g, idist_x, eps_x, scal_x, info)
@@ -53,15 +53,15 @@ program genHZ
 
   lda = n
   m = n
-  p = mod(lda, 8)
-  !if (p .ne. 0) lda = lda + (8 - p)
-  if (p .ne. 0) stop '{LDA=N} mod 8 <> 0'
+  p = mod(lda, 16)
+  !if (p .ne. 0) lda = lda + (16 - p)
+  if (p .ne. 0) stop '{LDA=N} mod 16 <> 0'
 
   allocate(ds_f(n))
   if (idist_f .ne. 0) then
-    call genlam(n, iseed, idist_f, eps_f, scal_f, ds_f, npos, info)
+    call sgenlam(n, iseed, idist_f, eps_f, scal_f, ds_f, npos, info)
   else
-    call txtlam(sigma_f, n, ds_f, npos, info)
+    call stxtlam(sigma_f, n, ds_f, npos, info)
   end if
   if (info .ne. 0) then
     write (*,*) info
@@ -74,9 +74,9 @@ program genHZ
 
   allocate(ds_g(n))
   if (idist_g .ne. 0) then
-    call genlam(n, iseed, idist_g, eps_g, scal_g, ds_g, npos, info)
+    call sgenlam(n, iseed, idist_g, eps_g, scal_g, ds_g, npos, info)
   else
-    call txtlam(sigma_g, n, ds_g, npos, info)
+    call stxtlam(sigma_g, n, ds_g, npos, info)
   end if
   if (info .ne. 0) then
     write (*,*) info
@@ -94,9 +94,9 @@ program genHZ
 
   allocate(dl_x(n))
   if (idist_x .ne. 0) then
-    call genlam(n, iseed, idist_x, eps_x, scal_x, dl_x, npos, info)
+    call sgenlam(n, iseed, idist_x, eps_x, scal_x, dl_x, npos, info)
   else
-    call txtlam(lambda_x, n, dl_x, npos, info)
+    call stxtlam(lambda_x, n, dl_x, npos, info)
   end if
   if (info .ne. 0) then
     write (*,*) info
@@ -124,16 +124,16 @@ program genHZ
     xs_f(p) = xs_f(p) / h
     xs_g(p) = xs_g(p) / h
 
-    ds_f(p) = dble(xs_f(p))
-    ds_g(p) = dble(xs_g(p))
+    ds_f(p) = real(xs_f(p))
+    ds_g(p) = real(xs_g(p))
   end do
 
   p = 3 * n
   allocate(xwork(p))
-  call gendat(n, iseed, xs_f, xs_g, xl_x, xf, xg, xx, df, dg, du, lda, xwork, info)
+  call sgendat(n, iseed, xs_f, xs_g, xl_x, xf, xg, xx, df, dg, du, lda, xwork, info)
   if (info .ne. 0) then
     write (*,*) info
-    stop 'gendat'
+    stop 'sgendat'
   end if
   deallocate(xwork)
 
@@ -155,21 +155,21 @@ program genHZ
   tola = zero
   tolb = zero
   lwork = -1
-  call dggsvp3('U', 'V', 'Q', m, p, n, df,lda, dg,lda, tola,tola, k, l, du,lda, dv,lda, dq,lda, iwork, tau, tolb, lwork, info)
+  call sggsvp3('U', 'V', 'Q', m, p, n, df,lda, dg,lda, tola,tola, k, l, du,lda, dv,lda, dq,lda, iwork, tau, tolb, lwork, info)
   lwork = max(1,ceiling(tolb))
   allocate(dwork(lwork))
 
-  tola = dlange('1', m, n, df, lda, dwork)
-  tolb = dlange('1', p, n, dg, lda, dwork)
-  ulp = dlamch('Precision')
-  unfl = dlamch('Safe Minimum')
+  tola = slange('1', m, n, df, lda, dwork)
+  tolb = slange('1', p, n, dg, lda, dwork)
+  ulp = slamch('Precision')
+  unfl = slamch('Safe Minimum')
   tola = max(m,n) * max(tola,unfl) * ulp
   tolb = max(p,n) * max(tolb,unfl) * ulp
 
-  call dggsvp3('U', 'V', 'Q', m, p, n, df,lda, dg,lda, tola,tolb, k, l, du,lda, dv,lda, dq,lda, iwork, tau, dwork, lwork, info)
+  call sggsvp3('U', 'V', 'Q', m, p, n, df,lda, dg,lda, tola,tolb, k, l, du,lda, dv,lda, dq,lda, iwork, tau, dwork, lwork, info)
   if (info .ne. 0) then
     write (*,*) info
-    stop 'dggsvp3'
+    stop 'sggsvp3'
   end if
 
   deallocate(dwork)
@@ -247,11 +247,11 @@ contains
     implicit none
 
     integer, intent(out) :: seed, n, idist_f, idist_g, idist_x, info
-    double precision, intent(out) :: eps_f, scal_f, eps_g, scal_g, eps_x, scal_x
+    real, intent(out) :: eps_f, scal_f, eps_g, scal_g, eps_x, scal_x
     character(len=*), intent(out) :: sigma_f, sigma_g, lambda_x, fil, grp
 
     integer, parameter :: nrqp = 7
-    double precision, parameter :: zero = 0.0d0
+    real, parameter :: zero = 0.0e0
     integer :: nxta
     character(len=256) :: cas
 
@@ -279,7 +279,7 @@ contains
     cas = ''
 
     if (command_argument_count() .lt. nrqp) then
-      write (*,*) 'genHZ.exe SIGMA_F SIGMA_G LAMBDA_X SEEDIX N FILE GROUP [ SIG|LAM_PARAMS ]'
+      write (*,*) 'sgenHZ.exe SIGMA_F SIGMA_G LAMBDA_X SEEDIX N FILE GROUP [ SIG|LAM_PARAMS ]'
       write (*,*) '>> COMMAND LINE (INPUT) ARGUMENTS <<'
       write (*,*) 'SIGMA_F : \Sigma(F); 1, 3, or FILENAME'
       write (*,*) 'SIGMA_G : \Sigma(G); 1, 3, or FILENAME'
@@ -299,17 +299,17 @@ contains
       write (*,*) ' SCALE_X: final \lambda_i = \lambda''_i * SCALE_X'
       write (*,*) '<< OUTPUT DATASETS IN FILE.h5/GROUP >>'
       write (*,*) 'IDADIM  : integer(4) { {LDA=M=P=}N, NPOS_X, K, L }'
-      write (*,*) 'ISEED   : integer(4); initial seed for (d|x)laran pRNG (see LaPACK dlaran.f)'
-      write (*,*) 'SIGMA_F : double precision(N); normalized: \sigma_F^2 + \sigma_G^2 = 1'
-      write (*,*) 'SIGMA_G : double precision(N); normalized: \sigma_F^2 + \sigma_G^2 = 1'
-      write (*,*) 'SIGMA   : double precision(N); \sigma_F / \sigma_G'
-      write (*,*) 'LAMBDA_X: double precision(N); as read/generated'
-      write (*,*) 'F       : double precision(LDA,N) = U_F \SIGMA_F X'
-      write (*,*) 'G       : double precision(LDA,N) = U_G \SIGMA_G X'
-      write (*,*) 'U       : double precision(LDA,N); see LaPACK dggsvp3.f'
-      write (*,*) 'V       : double precision(LDA,N); see LaPACK dggsvp3.f'
-      write (*,*) 'Q       : double precision(LDA,N); see LaPACK dggsvp3.f'
-      write (*,*) 'TOL     : double precision(2) = (/ TOLA, TOLB /); see LaPACK dggsvd.f'
+      write (*,*) 'ISEED   : integer(4); initial seed for (d|x)laran pRNG (see LaPACK slaran.f)'
+      write (*,*) 'SIGMA_F : real(N); normalized: \sigma_F^2 + \sigma_G^2 = 1'
+      write (*,*) 'SIGMA_G : real(N); normalized: \sigma_F^2 + \sigma_G^2 = 1'
+      write (*,*) 'SIGMA   : real(N); \sigma_F / \sigma_G'
+      write (*,*) 'LAMBDA_X: real(N); as read/generated'
+      write (*,*) 'F       : real(LDA,N) = U_F \SIGMA_F X'
+      write (*,*) 'G       : real(LDA,N) = U_G \SIGMA_G X'
+      write (*,*) 'U       : real(LDA,N); see LaPACK sggsvp3.f'
+      write (*,*) 'V       : real(LDA,N); see LaPACK sggsvp3.f'
+      write (*,*) 'Q       : real(LDA,N); see LaPACK sggsvp3.f'
+      write (*,*) 'TOL     : real(2) = (/ TOLA, TOLB /); see LaPACK sggsvd.f'
       info = 1
       return
     end if
@@ -466,13 +466,13 @@ contains
 
     integer(hid_t), intent(in) :: gid
     integer, intent(in) :: lda, n, npos, k, l, six, iseed(4), idist_f, idist_g, idist_x
-    double precision, intent(in) :: ds_f(n), ds_g(n), ds(n), dl_x(n), df(lda,n), dg(lda,n), du(lda,n), dv(lda,n), dq(lda,n), &
+    real, intent(in) :: ds_f(n), ds_g(n), ds(n), dl_x(n), df(lda,n), dg(lda,n), du(lda,n), dv(lda,n), dq(lda,n), &
          eps_f, eps_g, eps_x, scal_f, scal_g, scal_x, tola, tolb
     integer, intent(out) :: info
 
     integer(hsize_t) :: dims(2)
     integer :: idadim(4), idist(4)
-    double precision :: eps(3), scal(3), tol(2)
+    real :: eps(3), scal(3), tol(2)
 
     info = 0
 
@@ -492,28 +492,28 @@ contains
     end if
     
     dims(1) = n
-    call h5ltmake_dataset_double_f(gid, 'SIGMA_F', 1, dims, ds_f, info)
+    call h5ltmake_dataset_float_f(gid, 'SIGMA_F', 1, dims, ds_f, info)
     if (info .ne. 0) then
       info = 3
       return
     end if
 
     dims(1) = n
-    call h5ltmake_dataset_double_f(gid, 'SIGMA_G', 1, dims, ds_g, info)
+    call h5ltmake_dataset_float_f(gid, 'SIGMA_G', 1, dims, ds_g, info)
     if (info .ne. 0) then
       info = 4
       return
     end if
 
     dims(1) = n
-    call h5ltmake_dataset_double_f(gid, 'SIGMA', 1, dims, ds, info)
+    call h5ltmake_dataset_float_f(gid, 'SIGMA', 1, dims, ds, info)
     if (info .ne. 0) then
       info = 5
       return
     end if
 
     dims(1) = n
-    call h5ltmake_dataset_double_f(gid, 'LAMBDA_X', 1, dims, dl_x, info)
+    call h5ltmake_dataset_float_f(gid, 'LAMBDA_X', 1, dims, dl_x, info)
     if (info .ne. 0) then
       info = 6
       return
@@ -521,7 +521,7 @@ contains
 
     dims(1) = lda
     dims(2) = n
-    call h5ltmake_dataset_double_f(gid, 'F', 2, dims, df, info)
+    call h5ltmake_dataset_float_f(gid, 'F', 2, dims, df, info)
     if (info .ne. 0) then
       info = 7
       return
@@ -529,7 +529,7 @@ contains
 
     dims(1) = lda
     dims(2) = n
-    call h5ltmake_dataset_double_f(gid, 'G', 2, dims, dg, info)
+    call h5ltmake_dataset_float_f(gid, 'G', 2, dims, dg, info)
     if (info .ne. 0) then
       info = 8
       return
@@ -537,7 +537,7 @@ contains
 
     dims(1) = lda
     dims(2) = n
-    call h5ltmake_dataset_double_f(gid, 'U', 2, dims, du, info)
+    call h5ltmake_dataset_float_f(gid, 'U', 2, dims, du, info)
     if (info .ne. 0) then
       info = 9
       return
@@ -545,7 +545,7 @@ contains
 
     dims(1) = lda
     dims(2) = n
-    call h5ltmake_dataset_double_f(gid, 'V', 2, dims, dv, info)
+    call h5ltmake_dataset_float_f(gid, 'V', 2, dims, dv, info)
     if (info .ne. 0) then
       info = 10
       return
@@ -553,7 +553,7 @@ contains
 
     dims(1) = lda
     dims(2) = n
-    call h5ltmake_dataset_double_f(gid, 'Q', 2, dims, dq, info)
+    call h5ltmake_dataset_float_f(gid, 'Q', 2, dims, dq, info)
     if (info .ne. 0) then
       info = 11
       return
@@ -569,7 +569,7 @@ contains
 
     eps = (/ eps_f, eps_g, eps_x /)
     dims(1) = 3
-    call h5ltmake_dataset_double_f(gid, 'EPS', 1, dims, eps, info)
+    call h5ltmake_dataset_float_f(gid, 'EPS', 1, dims, eps, info)
     if (info .ne. 0) then
       info = 13
       return
@@ -577,7 +577,7 @@ contains
 
     scal = (/ scal_f, scal_g, scal_x /)
     dims(1) = 3
-    call h5ltmake_dataset_double_f(gid, 'SCALE', 1, dims, scal, info)
+    call h5ltmake_dataset_float_f(gid, 'SCALE', 1, dims, scal, info)
     if (info .ne. 0) then
       info = 14
       return
@@ -585,7 +585,7 @@ contains
 
     tol = (/ tola, tolb /)
     dims(1) = 2
-    call h5ltmake_dataset_double_f(gid, 'TOL', 1, dims, tol, info)
+    call h5ltmake_dataset_float_f(gid, 'TOL', 1, dims, tol, info)
     if (info .ne. 0) then
       info = 15
       return
@@ -593,4 +593,4 @@ contains
 
   end subroutine h5wrds
 
-end program genHZ
+end program sgenHZ

@@ -67,7 +67,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
 
   ! Prepare shuffler for block sweeps in block HZ.
 
-  CALL INITSH(NBSIZE, NBL, NC, IPL, IFCS, M, N, F, LDF, G, LDG, V, LDV)
+  CALL DINITSH(NBSIZE, NBL, NC, IPL, IFCS, M, N, F, LDF, G, LDG, V, LDV)
 
   ! =====================================================================
 
@@ -329,7 +329,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
 
   ! Restore shuffled columns.
 
-  CALL BACKSH(NBSIZE, NBL, NC, IPL, IFCS, INVP, M, N, F, LDF, G, LDG, V, LDV)
+  CALL DBACKSH(NBSIZE, NBL, NC, IPL, IFCS, INVP, M, N, F, LDF, G, LDG, V, LDV)
 
   ! =====================================================================
 

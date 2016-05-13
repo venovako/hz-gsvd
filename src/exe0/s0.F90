@@ -1,4 +1,4 @@
-PROGRAM EXE0
+PROGRAM S0
 
   USE H5LT
   USE HDF5
@@ -19,16 +19,16 @@ PROGRAM EXE0
 
   INTEGER :: BP, OLDBP, P, Q, LWORK, ISTATS(4), NSWEEP, INFO
   INTEGER(8) :: NROT(2), WALLTM(3)
-  DOUBLE PRECISION :: TOL, DSTATS(2)
+  DOUBLE PRECISION :: DSTATS(2)
   !DIR$ ATTRIBUTES ALIGN: 64:: ISTATS, DSTATS
+  REAL :: TOL
 
-  DOUBLE PRECISION, ALLOCATABLE :: F(:,:), G(:,:), V(:,:), VQ(:,:)
+  REAL, ALLOCATABLE :: F(:,:), G(:,:), V(:,:), VQ(:,:)
   !DIR$ ATTRIBUTES ALIGN: 64:: F, G, V, VQ
-  DOUBLE PRECISION, ALLOCATABLE :: SIGMA(:), H(:), K(:), TAU(:), WORK(:)
+  REAL, ALLOCATABLE :: SIGMA(:), H(:), K(:), TAU(:), WORK(:)
   !DIR$ ATTRIBUTES ALIGN: 64:: SIGMA, H, K, TAU, WORK
 
-  DOUBLE PRECISION, EXTERNAL :: DNRM2, DLAMCH
-  EXTERNAL :: DLACPY, DLASET, DGEQLF, DORGQL
+  EXTERNAL :: SLACPY, SLASET, SGEQLF, SORGQL
 
   CALL READCL(H5FN, H5GN, H5RN, BP)
   IF (BP .LT. 0) STOP 'BTHRDS < 0'
@@ -60,23 +60,24 @@ PROGRAM EXE0
   ALLOCATE(K(N))
   ALLOCATE(TAU(N))
 
-  DSTATS = D_ZERO
   LWORK = -1
-  CALL DGEQLF(M, N, V, LDV, TAU, DSTATS(1), LWORK, INFO)
-  IF (INFO .NE. 0) STOP 'DGEQLF workspace query'
-  CALL DORGQL(M, N, N, VQ, LDV, TAU, DSTATS(2), LWORK, INFO)
-  IF (INFO .NE. 0) STOP 'DORGQL workspace query'
-  LWORK = CEILING(MAX(DSTATS(1), DSTATS(2)))
+  CALL SGEQLF(M, N, V, LDV, TAU, TOL, LWORK, INFO)
+  IF (INFO .NE. 0) STOP 'SGEQLF workspace query'
+  P = CEILING(TOL)
+  CALL SORGQL(M, N, N, VQ, LDV, TAU, TOL, LWORK, INFO)
+  IF (INFO .NE. 0) STOP 'SORGQL workspace query'
+  Q = CEILING(TOL)
+  LWORK = MAX(P, Q)
   ALLOCATE(WORK(LWORK))
 
   DIMS2(1) = LDF
   DIMS2(2) = N
-  CALL h5ltread_dataset_double_f(GID, 'F', F, DIMS2, INFO)
+  CALL h5ltread_dataset_float_f(GID, 'F', F, DIMS2, INFO)
   IF (INFO .NE. 0) STOP 'Error reading F!'
 
   DIMS2(1) = LDG
   DIMS2(2) = N
-  CALL h5ltread_dataset_double_f(GID, 'G', G, DIMS2, INFO)
+  CALL h5ltread_dataset_float_f(GID, 'G', G, DIMS2, INFO)
   IF (INFO .NE. 0) STOP 'Error reading G!'
 
   CALL h5gclose_f(GID, INFO)
@@ -88,43 +89,43 @@ PROGRAM EXE0
   IF (LDF .GT. M) THEN
      P = LDV - M
      Q = M + 1
-     CALL DLASET('A', P, N, D_ZERO, D_ZERO, F(Q, 1), LDF)
+     CALL SLASET('A', P, N, S_ZERO, S_ZERO, F(Q, 1), LDF)
   END IF
 
   IF (LDG .GT. M) THEN
      P = LDV - M
      Q = M + 1
-     CALL DLASET('A', P, N, D_ZERO, D_ZERO, G(Q, 1), LDG)
+     CALL SLASET('A', P, N, S_ZERO, S_ZERO, G(Q, 1), LDG)
   END IF
 
   IF (LDV .GT. M) THEN
      P = LDV - M
      Q = M + 1
-     CALL DLASET('A', P, N, D_ZERO, D_ZERO, V(Q, 1), LDV)
-     CALL DLASET('A', P, N, D_ZERO, D_ZERO, VQ(Q, 1), LDV)
+     CALL SLASET('A', P, N, S_ZERO, S_ZERO, V(Q, 1), LDV)
+     CALL SLASET('A', P, N, S_ZERO, S_ZERO, VQ(Q, 1), LDV)
   END IF
 
   WRITE (*,*) N
   CALL TIMER_START(WALLTM)
 
-  TOL = D_MONE
+  TOL = S_MONE
   NSWEEP = 0
   NROT = 0_8
   INFO = 0
 
-  CALL DZIMMER0(M, N, F, LDF, G, LDG, V, LDV, -1, TOL, H, K, SIGMA, NSWEEP, NROT, INFO)
+  CALL SZIMMER0(M, N, F, LDF, G, LDG, V, LDV, -1, TOL, H, K, SIGMA, NSWEEP, NROT, INFO)
 
   IF (INFO .EQ. 0) THEN
-     CALL DGEQLF(M, N, V, LDV, TAU, WORK, LWORK, INFO)
-     IF (INFO .NE. 0) STOP 'DGEQLF'
+     CALL SGEQLF(M, N, V, LDV, TAU, WORK, LWORK, INFO)
+     IF (INFO .NE. 0) STOP 'SGEQLF'
 
-     CALL DLACPY('A', M, N, V, LDV, VQ, LDV)
-     CALL DLASET('U', M, N - 1, D_ZERO, D_ZERO, V(1, 2), LDV)
+     CALL SLACPY('A', M, N, V, LDV, VQ, LDV)
+     CALL SLASET('U', M, N - 1, S_ZERO, S_ZERO, V(1, 2), LDV)
 
-     CALL DORGQL(M, N, N, VQ, LDV, TAU, WORK, LWORK, INFO)
-     IF (INFO .NE. 0) STOP 'DORGQL'
+     CALL SORGQL(M, N, N, VQ, LDV, TAU, WORK, LWORK, INFO)
+     IF (INFO .NE. 0) STOP 'SORGQL'
   ELSE
-     SIGMA = D_ZERO
+     SIGMA = S_ZERO
   END IF
 
   CALL TIMER_STOP(WALLTM)
@@ -168,23 +169,23 @@ PROGRAM EXE0
      IF (INFO .NE. 0) STOP 'Error writing DSTATS!'
 
      DIMS1(1) = N
-     CALL h5ltmake_dataset_double_f(GID, 'SIGMA', 1, DIMS1, SIGMA, INFO)
+     CALL h5ltmake_dataset_float_f(GID, 'SIGMA', 1, DIMS1, SIGMA, INFO)
      IF (INFO .NE. 0) STOP 'Error writing SIGMA!'
-     CALL h5ltmake_dataset_double_f(GID, 'H', 1, DIMS1, H, INFO)
+     CALL h5ltmake_dataset_float_f(GID, 'H', 1, DIMS1, H, INFO)
      IF (INFO .NE. 0) STOP 'Error writing H!'
-     CALL h5ltmake_dataset_double_f(GID, 'K', 1, DIMS1, K, INFO)
+     CALL h5ltmake_dataset_float_f(GID, 'K', 1, DIMS1, K, INFO)
      IF (INFO .NE. 0) STOP 'Error writing K!'
 
 #ifdef HAVE_MTXOUT
      DIMS2(1) = LDV
      DIMS2(2) = N
-     CALL h5ltmake_dataset_double_f(GID, 'F', 2, DIMS2, F, INFO)
+     CALL h5ltmake_dataset_float_f(GID, 'F', 2, DIMS2, F, INFO)
      IF (INFO .NE. 0) STOP 'Error writing F!'
-     CALL h5ltmake_dataset_double_f(GID, 'G', 2, DIMS2, G, INFO)
+     CALL h5ltmake_dataset_float_f(GID, 'G', 2, DIMS2, G, INFO)
      IF (INFO .NE. 0) STOP 'Error writing G!'
-     CALL h5ltmake_dataset_double_f(GID, 'V', 2, DIMS2, V, INFO)
+     CALL h5ltmake_dataset_float_f(GID, 'V', 2, DIMS2, V, INFO)
      IF (INFO .NE. 0) STOP 'Error writing V!'
-     CALL h5ltmake_dataset_double_f(GID, 'VQ', 2, DIMS2, VQ, INFO)
+     CALL h5ltmake_dataset_float_f(GID, 'VQ', 2, DIMS2, VQ, INFO)
      IF (INFO .NE. 0) STOP 'Error writing VQ!'
 #endif
 
@@ -222,7 +223,7 @@ CONTAINS
 
     CHARACTER(LEN=8) :: CLA
 
-    IF (COMMAND_ARGUMENT_COUNT() .GT. 4) STOP 'exe0.exe H5FN H5GN H5RN BTHRDS'
+    IF (COMMAND_ARGUMENT_COUNT() .GT. 4) STOP 's0.exe H5FN H5GN H5RN BTHRDS'
 
     IF (COMMAND_ARGUMENT_COUNT() .GE. 1) THEN
        CALL GET_COMMAND_ARGUMENT(1, H5FN)
@@ -252,4 +253,4 @@ CONTAINS
 
   END SUBROUTINE READCL
 
-END PROGRAM EXE0
+END PROGRAM S0

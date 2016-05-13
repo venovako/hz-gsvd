@@ -1,14 +1,23 @@
 include ../mkLNX.inc
 
-all: exe0.exe
+all: s0.exe d0.exe
 
-exe0.exe: exe0.o ../HZ/libhz.a mkLNX ../mkLNX.inc
-	$(FC) $(FCFLAGS) -mkl exe0.o -o$@ $(LDFLAGS)
+s0.exe: s0.o ../HZ/libhz.a mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -mkl s0.o -o$@ $(LDFLAGS)
 
-exe0.o: exe0.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
-	$(FC) $(FCFLAGS) -c exe0.F90
+s0.o: s0.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -c s0.F90
+
+d0.exe: d0.o ../HZ/libhz.a mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -mkl d0.o -o$@ $(LDFLAGS)
+
+d0.o: d0.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
+	$(FC) $(FCFLAGS) -c d0.F90
 
 clean:
-	-$(RM) exe0.o
+	-$(RM) s0.o
 	-$(RM) *.optrpt
-	-$(RM) exe0.exe
+	-$(RM) s0.exe
+	-$(RM) d0.o
+	-$(RM) *.optrpt
+	-$(RM) d0.exe

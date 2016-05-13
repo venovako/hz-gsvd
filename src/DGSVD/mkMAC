@@ -1,6 +1,12 @@
 include ../mkMAC.inc
 
-all: DGSVD.exe
+all: SGSVD.exe DGSVD.exe
+
+SGSVD.exe: SGSVD.o ../HZ/libhz.a mkMAC ../mkMAC.inc
+	$(FC) $(FCFLAGS) SGSVD.o -o$@ $(LDFLAGS)
+
+SGSVD.o: SGSVD.F90 ../HZ/hz.mod mkMAC ../mkMAC.inc
+	$(FC) $(FCFLAGS) -c SGSVD.F90
 
 DGSVD.exe: DGSVD.o ../HZ/libhz.a mkMAC ../mkMAC.inc
 	$(FC) $(FCFLAGS) DGSVD.o -o$@ $(LDFLAGS)
@@ -9,6 +15,9 @@ DGSVD.o: DGSVD.F90 ../HZ/hz.mod mkMAC ../mkMAC.inc
 	$(FC) $(FCFLAGS) -c DGSVD.F90
 
 clean:
+	-$(RM) SGSVD.o
 	-$(RM) DGSVD.o
+	-$(RM) SGSVD.exe
 	-$(RM) DGSVD.exe
+	-$(RM) SGSVD.exe.dSYM
 	-$(RM) DGSVD.exe.dSYM
