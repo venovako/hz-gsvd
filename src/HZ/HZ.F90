@@ -53,6 +53,7 @@ CONTAINS
   END FUNCTION MY_DFMA
 
 ! Threading support.
+#include "BLAS_PREPARE.F90"
 #include "BLAS_SET_NUM_THREADS.F90"
 #include "GET_NTHR.F90"
 

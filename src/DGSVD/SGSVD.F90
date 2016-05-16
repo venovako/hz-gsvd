@@ -186,7 +186,7 @@ PROGRAM SGSVD
      CALL h5ltmake_dataset_int_f(GID, 'IWORK', 1, DIMS1, IWORK, INFO)
      IF (INFO .NE. 0) STOP 'Error writing IWORK!'
 
-#ifdef HAVE_MTXOUT
+#ifdef USE_MTXOUT
      DIMS2(1) = LDA
      DIMS2(2) = N
      CALL h5ltmake_dataset_float_f(GID, 'A', 2, DIMS2, A, INFO)

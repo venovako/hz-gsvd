@@ -174,7 +174,7 @@ PROGRAM D0
      CALL h5ltmake_dataset_double_f(GID, 'K', 1, DIMS1, K, INFO)
      IF (INFO .NE. 0) STOP 'Error writing K!'
 
-#ifdef HAVE_MTXOUT
+#ifdef USE_MTXOUT
      DIMS2(1) = LDV
      DIMS2(2) = N
      CALL h5ltmake_dataset_double_f(GID, 'F', 2, DIMS2, F, INFO)
