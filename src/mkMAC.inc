@@ -1,9 +1,5 @@
-HDF5=$(HOME)/hdf5_gnu-nompi
-H5FC=$(HDF5)/bin/h5fc #h5pfc
-
 RM=rm -rf
-
-FC=$(H5FC)
+FC=gfortran
 AR=ar
 
 FORFLAGS=-DUSE_GNU -fopenmp -fexceptions -frecursive
@@ -19,6 +15,7 @@ DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan
 FPUFLAGS=-ffpe-trap=invalid,zero,overflow
 endif # ?NDEBUG
 
-LIBFLAGS=-I../HZ
+HDF5=$(HOME)/hdf5_gnu-nompi
+LIBFLAGS=-I../HZ -I$(HDF5)/include
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz -L/usr/local/lib -ltmglib -llapack -lrefblas
+LDFLAGS=-L../HZ -lhz -L$(HDF5)/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -L/usr/local/lib -ltmglib -llapack -lrefblas

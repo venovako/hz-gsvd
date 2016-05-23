@@ -1,9 +1,5 @@
-HDF5=$(HOME)/hdf5_intel-nompi
-H5FC=$(HDF5)/bin/h5fc #h5pfc
-
 RM=rm -rf
-
-FC=$(H5FC)
+FC=ifort
 AR=xiar
 
 FORFLAGS=-qopenmp -fexceptions -reentrancy threaded -standard-semantics
@@ -23,6 +19,7 @@ endif # ?ARCH
 FPUFLAGS=-fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check -no-ftz -no-complex-limited-range -prec-div -prec-sqrt
 endif # ?NDEBUG
 
-LIBFLAGS=-DUSE_MKL -I../HZ
+HDF5=$(HOME)/hdf5_intel-nompi
+LIBFLAGS=-DUSE_MKL -I../HZ -I$(HDF5)/include
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz
+LDFLAGS=-L../HZ -lhz -L$(HDF5)/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5

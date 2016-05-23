@@ -8,12 +8,12 @@ INTEGER FUNCTION GET_IOUNIT(TYP)
   CHARACTER, INTENT(IN) :: TYP
 
   SELECT CASE (TYP)
+  CASE ('E', 'e') ! STDERR
+     GET_IOUNIT = 0
   CASE ('I', 'i') ! STDIN
      GET_IOUNIT = 5
   CASE ('O', 'o') ! STDOUT
      GET_IOUNIT = 6
-  CASE ('E', 'e') ! STDERR
-     GET_IOUNIT = 0
   CASE ('N', 'n')
      IF (OMP_GET_NUM_THREADS() .LE. 4) THEN
         GET_IOUNIT = 1 + OMP_GET_THREAD_NUM()
