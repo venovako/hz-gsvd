@@ -1,0 +1,19 @@
+include mkGNU.inc
+
+all:
+	$(MAKE) -C HZ -f mkGNU all
+	$(MAKE) -C genHZ -f mkGNU all
+	$(MAKE) -C DGSVD -f mkGNU all
+	$(MAKE) -C exe0 -f mkGNU all
+	$(MAKE) -C exe1 -f mkGNU all
+	$(MAKE) -C exe2 -f mkGNU all
+#	$(MAKE) -C exe3 -f mkGNU all
+
+clean:
+	$(MAKE) -C HZ -f mkGNU clean
+	$(MAKE) -C genHZ -f mkGNU clean
+	$(MAKE) -C DGSVD -f mkGNU clean
+	$(MAKE) -C exe0 -f mkGNU clean
+	$(MAKE) -C exe1 -f mkGNU clean
+	$(MAKE) -C exe2 -f mkGNU clean
+#	$(MAKE) -C exe3 -f mkGNU clean

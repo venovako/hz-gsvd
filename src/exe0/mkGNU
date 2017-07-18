@@ -1,0 +1,21 @@
+include ../mkGNU.inc
+
+all: s0.exe d0.exe
+
+s0.exe: s0.o ../HZ/libhz.a mkGNU ../mkGNU.inc
+	$(FC) $(FCFLAGS) s0.o -o$@ $(LDFLAGS)
+
+s0.o: s0.F90 ../HZ/hz.mod mkGNU ../mkGNU.inc
+	$(FC) $(FCFLAGS) -c s0.F90
+
+d0.exe: d0.o ../HZ/libhz.a mkGNU ../mkGNU.inc
+	$(FC) $(FCFLAGS) d0.o -o$@ $(LDFLAGS)
+
+d0.o: d0.F90 ../HZ/hz.mod mkGNU ../mkGNU.inc
+	$(FC) $(FCFLAGS) -c d0.F90
+
+clean:
+	-$(RM) s0.o
+	-$(RM) s0.exe
+	-$(RM) d0.o
+	-$(RM) d0.exe

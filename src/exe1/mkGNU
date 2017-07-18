@@ -1,0 +1,13 @@
+include ../mkGNU.inc
+
+all: exe1.exe
+
+exe1.exe: exe1.o ../HZ/libhz.a mkGNU ../mkGNU.inc
+	$(FC) $(FCFLAGS) exe1.o -o$@ $(LDFLAGS)
+
+exe1.o: exe1.F90 ../HZ/hz.mod mkGNU ../mkGNU.inc
+	$(FC) $(FCFLAGS) -c exe1.F90
+
+clean:
+	-$(RM) exe1.o
+	-$(RM) exe1.exe
