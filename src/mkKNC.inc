@@ -1,6 +1,7 @@
 RM=rm -rf
-FC=ifort
 AR=xiar
+
+FC=h5fc #ifort
 
 FORFLAGS=-DUSE_KNC -mmic -qopenmp -fexceptions -reentrancy threaded -standard-semantics
 ARFLAGS=-qnoipo -lib rsv
@@ -15,7 +16,6 @@ DBGFLAGS=-fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -de
 FPUFLAGS=-fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check -no-ftz -no-complex-limited-range -prec-div -prec-sqrt
 endif # ?NDEBUG
 
-HDF5=$(HOME)/hdf5_knc-nompi
-LIBFLAGS=-DUSE_MKL -I../HZ -I$(HDF5)/include
+LIBFLAGS=-I../HZ -DUSE_MKL -mkl #-DMKL_DIRECT_CALL
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz -L$(HDF5)/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5
+LDFLAGS=-L../HZ -lhz
