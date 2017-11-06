@@ -17,6 +17,16 @@ DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan #-finit-derived
 FPUFLAGS=-ffpe-trap=invalid,zero,overflow #-DHAVE_FMA
 endif # ?NDEBUG
 
-LIBFLAGS=-I../HZ -DUSE_MKL -I${MKLROOT}/include
+ifeq ($(USE_MKL),parallel)
+MKL_D=-DUSE_MKL -DUSE_LAPACK_PAR #-DMKL_DIRECT_CALL
+MKL_l=-lmkl_gf_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl
+else # USE_MKL=sequential
+MKL_D=-DUSE_MKL -DUSE_LAPACK_SEQ #-DMKL_DIRECT_CALL -DMKL_DIRECT_CALL_SEQ
+MKL_l=-lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+endif # ?USE_MKL
+MKL_I=-I${MKLROOT}/include
+MKL_L=-L${MKLROOT}/lib/intel64 -Wl,-rpath=${MKLROOT}/lib/intel64 -L${MKLROOT}/../compiler/lib/intel64 -Wl,-rpath=${MKLROOT}/../compiler/lib/intel64 -Wl,--no-as-needed
+
+LIBFLAGS=-I../HZ $(MKL_D) $(MKL_I)
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz -L${MKLROOT}/lib/intel64 -Wl,-rpath=${MKLROOT}/lib/intel64 -L${MKLROOT}/../compiler/lib/intel64 -Wl,-rpath=${MKLROOT}/../compiler/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl
+LDFLAGS=-L../HZ -lhz $(MKL_L) $(MKL_l)

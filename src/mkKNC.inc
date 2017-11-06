@@ -4,7 +4,7 @@ AR=xiar
 
 FC=h5fc #ifort
 
-FORFLAGS=-DUSE_KNC -mmic -qopenmp -fexceptions -reentrancy threaded -standard-semantics
+FORFLAGS=-DUSE_INTEL -DUSE_KNC -mmic -qopenmp -fexceptions -reentrancy threaded -standard-semantics
 ARFLAGS=-qnoipo -lib rsv
 
 ifdef NDEBUG
@@ -17,6 +17,14 @@ DBGFLAGS=-fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -de
 FPUFLAGS=-DHAVE_FMA -fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check -no-ftz -no-complex-limited-range -prec-div -prec-sqrt
 endif # ?NDEBUG
 
-LIBFLAGS=-I../HZ -DUSE_MKL -mkl #-DMKL_DIRECT_CALL
+ifeq ($(USE_MKL),parallel)
+MKL_D=-DUSE_MKL -DUSE_LAPACK_PAR #-DMKL_DIRECT_CALL
+MKL=parallel
+else # USE_MKL=sequential
+MKL_D=-DUSE_MKL -DUSE_LAPACK_SEQ #-DMKL_DIRECT_CALL -DMKL_DIRECT_CALL_SEQ
+MKL=sequential
+endif # ?USE_MKL
+
+LIBFLAGS=-I../HZ $(MKL_D) -mkl=$(MKL) 
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
 LDFLAGS=-L../HZ -lhz
