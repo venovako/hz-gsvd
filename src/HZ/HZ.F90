@@ -92,13 +92,7 @@ CONTAINS
 #include "STRINI.F90"
 #include "MMSTEP.F90"
 
-! Hari-Zimmermann, Level 0.
-#include "ZIMMER0.F90"
-
-! Hari-Zimmermann, Level 1.
-#include "ZIMMER1.F90"
-
-! Hari-Zimmermann, Level 2.
-#include "ZIMMER2.F90"
+! Hari-Zimmermann, Levels 0, 1, 2.
+#include "ZIMMER.F90"
 
 END MODULE HZ

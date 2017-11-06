@@ -17,12 +17,12 @@ DBGFLAGS=-fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -de
 FPUFLAGS=-DHAVE_FMA -fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check -no-ftz -no-complex-limited-range -prec-div -prec-sqrt
 endif # ?NDEBUG
 
-ifeq ($(USE_MKL),parallel)
-MKL_D=-DUSE_MKL -DUSE_LAPACK_PAR #-DMKL_DIRECT_CALL
-MKL=parallel
-else # USE_MKL=sequential
-MKL_D=-DUSE_MKL -DUSE_LAPACK_SEQ #-DMKL_DIRECT_CALL -DMKL_DIRECT_CALL_SEQ
+ifeq ($(USE_MKL),sequential)
+MKL_D=-DUSE_MKL -DUSE_LAPACK_SEQ -DMKL_DIRECT_CALL -DMKL_DIRECT_CALL_SEQ
 MKL=sequential
+else # USE_MKL=parallel
+MKL_D=-DUSE_MKL -DUSE_LAPACK_PAR -DMKL_DIRECT_CALL
+MKL=parallel
 endif # ?USE_MKL
 
 LIBFLAGS=-I../HZ $(MKL_D) -mkl=$(MKL) 

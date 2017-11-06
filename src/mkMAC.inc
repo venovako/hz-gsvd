@@ -4,7 +4,7 @@ AR=ar
 
 FC=h5fc #gfortran
 
-FORFLAGS=-DUSE_GNU -fopenmp -fexceptions -frecursive
+FORFLAGS=-DUSE_GNU -ffree-line-length-none -fopenmp -fexceptions -frecursive
 ARFLAGS=rsv
 
 ifdef NDEBUG
@@ -17,12 +17,12 @@ DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan -finit-derived
 FPUFLAGS=-DHAVE_FMA -ffpe-trap=invalid,zero,overflow
 endif # ?NDEBUG
 
-ifeq ($(USE_MKL),parallel)
-MKL_D=-DUSE_MKL -DUSE_LAPACK_PAR #-DMKL_DIRECT_CALL
-MKL_l=-lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -liomp5 -lpthread -lm -ldl
-else # USE_MKL=sequential
-MKL_D=-DUSE_MKL -DUSE_LAPACK_SEQ #-DMKL_DIRECT_CALL -DMKL_DIRECT_CALL_SEQ
+ifeq ($(USE_MKL),sequential)
+MKL_D=-DUSE_MKL -DUSE_LAPACK_SEQ -DMKL_DIRECT_CALL -DMKL_DIRECT_CALL_SEQ
 MKL_l=-lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm -ldl
+else # USE_MKL=parallel
+MKL_D=-DUSE_MKL -DUSE_LAPACK_PAR -DMKL_DIRECT_CALL
+MKL_l=-lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -liomp5 -lpthread -lm -ldl
 endif # ?USE_MKL
 MKL_I=-I${MKLROOT}/include
 MKL_L=-L${MKLROOT}/lib -Wl,-rpath,${MKLROOT}/lib -L${MKLROOT}/../compiler/lib -Wl,-rpath,${MKLROOT}/../compiler/lib
