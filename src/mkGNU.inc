@@ -2,7 +2,12 @@
 RM=rm -rf
 AR=ar
 
-FC=h5fc #gfortran
+#gfortran
+ifdef USE_MPI
+FC=h5pfc
+else # no MPI
+FC=h5fc
+endif # ?USE_MPI
 
 FORFLAGS=-DUSE_GNU -ffree-line-length-none -fopenmp -fexceptions -frecursive
 ARFLAGS=rsv

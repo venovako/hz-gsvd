@@ -7,7 +7,9 @@ all:
 	$(MAKE) -C exe0 -f mkKNC all
 	$(MAKE) -C exe1 -f mkKNC all
 	$(MAKE) -C exe2 -f mkKNC all
-#	$(MAKE) -C exe3 -f mkKNC all
+ifdef USE_MPI
+	$(MAKE) -C exe3 -f mkKNC all
+endif
 
 clean:
 	$(MAKE) -C HZ -f mkKNC clean
@@ -16,4 +18,6 @@ clean:
 	$(MAKE) -C exe0 -f mkKNC clean
 	$(MAKE) -C exe1 -f mkKNC clean
 	$(MAKE) -C exe2 -f mkKNC clean
-#	$(MAKE) -C exe3 -f mkKNC clean
+ifdef USE_MPI
+	$(MAKE) -C exe3 -f mkKNC clean
+endif

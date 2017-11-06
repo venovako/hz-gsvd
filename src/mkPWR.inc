@@ -2,7 +2,12 @@
 RM=rm -rf
 AR=ar
 
-FC=h5fc #xlf2008_r
+#xlf2008_r
+ifdef USE_MPI
+FC=h5pfc
+else # no MPI
+FC=h5fc
+endif # ?USE_MPI
 
 FORFLAGS=-qnosave -qsclk=micro -qsmp=omp #-WF,-qfpp
 ARFLAGS=rsv

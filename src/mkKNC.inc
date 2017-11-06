@@ -2,7 +2,12 @@
 RM=rm -rf
 AR=xiar
 
-FC=h5fc #ifort
+#ifort
+ifdef USE_MPI
+FC=h5pfc
+else # no MPI
+FC=h5fc
+endif # ?USE_MPI
 
 FORFLAGS=-DUSE_INTEL -DUSE_KNC -mmic -qopenmp -fexceptions -reentrancy threaded -standard-semantics
 ARFLAGS=-qnoipo -lib rsv

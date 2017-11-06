@@ -7,7 +7,9 @@ all:
 	$(MAKE) -C exe0 -f mkGNU all
 	$(MAKE) -C exe1 -f mkGNU all
 	$(MAKE) -C exe2 -f mkGNU all
-#	$(MAKE) -C exe3 -f mkGNU all
+ifdef USE_MPI
+	$(MAKE) -C exe3 -f mkGNU all
+endif
 
 clean:
 	$(MAKE) -C HZ -f mkGNU clean
@@ -16,4 +18,6 @@ clean:
 	$(MAKE) -C exe0 -f mkGNU clean
 	$(MAKE) -C exe1 -f mkGNU clean
 	$(MAKE) -C exe2 -f mkGNU clean
-#	$(MAKE) -C exe3 -f mkGNU clean
+ifdef USE_MPI
+	$(MAKE) -C exe3 -f mkGNU clean
+endif

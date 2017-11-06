@@ -7,7 +7,9 @@ all:
 	$(MAKE) -C exe0 -f mkPWR all
 	$(MAKE) -C exe1 -f mkPWR all
 	$(MAKE) -C exe2 -f mkPWR all
-#	$(MAKE) -C exe3 -f mkPWR all
+ifdef USE_MPI
+	$(MAKE) -C exe3 -f mkPWR all
+endif
 
 clean:
 	$(MAKE) -C HZ -f mkPWR clean
@@ -16,4 +18,6 @@ clean:
 	$(MAKE) -C exe0 -f mkPWR clean
 	$(MAKE) -C exe1 -f mkPWR clean
 	$(MAKE) -C exe2 -f mkPWR clean
-#	$(MAKE) -C exe3 -f mkPWR clean
+ifdef USE_MPI
+	$(MAKE) -C exe3 -f mkPWR clean
+endif
