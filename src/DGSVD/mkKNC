@@ -3,13 +3,13 @@ include ../mkKNC.inc
 all: SGSVD.exe DGSVD.exe
 
 SGSVD.exe: SGSVD.o ../HZ/libhz.a mkKNC ../mkKNC.inc
-	$(FC) $(FCFLAGS) -mkl SGSVD.o -o$@ $(LDFLAGS)
+	$(FC) $(FCFLAGS) SGSVD.o -o$@ $(LDFLAGS)
 
 SGSVD.o: SGSVD.F90 ../HZ/hz.mod mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -c SGSVD.F90
 
 DGSVD.exe: DGSVD.o ../HZ/libhz.a mkKNC ../mkKNC.inc
-	$(FC) $(FCFLAGS) -mkl DGSVD.o -o$@ $(LDFLAGS)
+	$(FC) $(FCFLAGS) DGSVD.o -o$@ $(LDFLAGS)
 
 DGSVD.o: DGSVD.F90 ../HZ/hz.mod mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -c DGSVD.F90

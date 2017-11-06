@@ -3,13 +3,13 @@ include ../mkLNX.inc
 all: s0.exe d0.exe
 
 s0.exe: s0.o ../HZ/libhz.a mkLNX ../mkLNX.inc
-	$(FC) $(FCFLAGS) -mkl s0.o -o$@ $(LDFLAGS)
+	$(FC) $(FCFLAGS) s0.o -o$@ $(LDFLAGS)
 
 s0.o: s0.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
 	$(FC) $(FCFLAGS) -c s0.F90
 
 d0.exe: d0.o ../HZ/libhz.a mkLNX ../mkLNX.inc
-	$(FC) $(FCFLAGS) -mkl d0.o -o$@ $(LDFLAGS)
+	$(FC) $(FCFLAGS) d0.o -o$@ $(LDFLAGS)
 
 d0.o: d0.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
 	$(FC) $(FCFLAGS) -c d0.F90

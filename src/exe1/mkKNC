@@ -3,7 +3,7 @@ include ../mkKNC.inc
 all: exe1.exe
 
 exe1.exe: exe1.o ../HZ/libhz.a mkKNC ../mkKNC.inc
-	$(FC) $(FCFLAGS) -mkl exe1.o -o$@ $(LDFLAGS)
+	$(FC) $(FCFLAGS) exe1.o -o$@ $(LDFLAGS)
 
 exe1.o: exe1.F90 ../HZ/hz.mod mkKNC ../mkKNC.inc
 	$(FC) $(FCFLAGS) -c exe1.F90

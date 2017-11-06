@@ -3,7 +3,7 @@ include ../mkLNX.inc
 all: exe2.exe
 
 exe2.exe: exe2.o ../HZ/libhz.a mkLNX ../mkLNX.inc
-	$(FC) $(FCFLAGS) -mkl exe2.o -o$@ $(LDFLAGS)
+	$(FC) $(FCFLAGS) exe2.o -o$@ $(LDFLAGS)
 
 exe2.o: exe2.F90 ../HZ/hz.mod mkLNX ../mkLNX.inc
 	$(FC) $(FCFLAGS) -c exe2.F90
