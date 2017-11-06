@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+# Optimization reports
+*.optrpt
+
+# Debug symbols
+*.dSYM
