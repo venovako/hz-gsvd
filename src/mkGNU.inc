@@ -1,4 +1,4 @@
-# Assumes HDF5, compiled with GNU compilers, and an FMA-enabled CPU.
+# Assumes HDF5, compiled with GNU compilers.
 RM=rm -rf
 AR=ar
 
@@ -10,11 +10,11 @@ ARFLAGS=rsv
 ifdef NDEBUG
 OPTFLAGS=-O$(NDEBUG) -march=native
 DBGFLAGS=-DNDEBUG
-FPUFLAGS=-DHAVE_FMA
+FPUFLAGS= #-DHAVE_FMA
 else # DEBUG
 OPTFLAGS=-O0 -march=native
 DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan #-finit-derived
-FPUFLAGS=-ffpe-trap=invalid,zero,overflow
+FPUFLAGS=-ffpe-trap=invalid,zero,overflow #-DHAVE_FMA
 endif # ?NDEBUG
 
 LIBFLAGS=-I../HZ -DUSE_MKL -I${MKLROOT}/include
