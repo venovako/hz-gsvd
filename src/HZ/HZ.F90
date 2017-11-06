@@ -33,11 +33,25 @@ MODULE HZ
   DOUBLE PRECISION, PARAMETER :: D_MONE  = -1.0D0
 
   INTERFACE MY_FMA
+#ifdef HAVE_FMA
      MODULE PROCEDURE MY_SFMA, MY_DFMA
+#else
+     FUNCTION MY_SFMA(A, B, C) BIND(C,name='fmaf')
+       USE, INTRINSIC :: ISO_C_BINDING
+       REAL(c_float), VALUE :: A, B, C
+       REAL(c_float) :: MY_SFMA
+     END FUNCTION MY_SFMA
+     FUNCTION MY_DFMA(A, B, C) BIND(C,name='fma')
+       USE, INTRINSIC :: ISO_C_BINDING
+       REAL(c_double), VALUE :: A, B, C
+       REAL(c_double) :: MY_DFMA
+     END FUNCTION MY_DFMA
+#endif
   END INTERFACE MY_FMA
 
 CONTAINS
 
+#ifdef HAVE_FMA
   PURE REAL FUNCTION MY_SFMA(A, B, C)
     IMPLICIT NONE
     REAL, INTENT(IN) :: A, B, C
@@ -51,6 +65,7 @@ CONTAINS
     !DIR$ FMA
     MY_DFMA = A * B + C
   END FUNCTION MY_DFMA
+#endif
 
 ! Threading support.
 #include "BLAS_PREPARE.F90"
