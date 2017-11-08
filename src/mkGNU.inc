@@ -9,17 +9,17 @@ else # no MPI
 FC=h5fc
 endif # ?USE_MPI
 
-FORFLAGS=-DUSE_GNU -ffree-line-length-none -fopenmp -fexceptions -frecursive
+FORFLAGS=-DUSE_GNU -ffree-line-length-none -fopenmp -fexceptions -frecursive -fstack-arrays
 ARFLAGS=rsv
 
 ifdef NDEBUG
-OPTFLAGS=-O$(NDEBUG) -march=native
-DBGFLAGS=-DNDEBUG
-FPUFLAGS= #-DHAVE_FMA
+OPTFLAGS=-O$(NDEBUG) -march=native -fgcse-las -fgcse-sm -fipa-pta -ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -fivopts -fvect-cost-model=unlimited -fvariable-expansion-in-unroller
+DBGFLAGS=-DNDEBUG -fopt-info-optimized-vec -pedantic
+FPUFLAGS=-ffp-contract=fast #-DHAVE_FMA
 else # DEBUG
 OPTFLAGS=-O0 -march=native
-DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan #-finit-derived
-FPUFLAGS=-ffpe-trap=invalid,zero,overflow #-DHAVE_FMA
+DBGFLAGS=-g -fcheck=all -finit-local-zero -finit-real=snan -pedantic #-finit-derived
+FPUFLAGS=-ffp-contract=fast -ffpe-trap=invalid,zero,overflow #-DHAVE_FMA
 endif # ?NDEBUG
 
 ifeq ($(USE_MKL),sequential)
