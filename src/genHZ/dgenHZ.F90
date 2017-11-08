@@ -23,7 +23,7 @@ program dgenHZ
   integer(hid_t) :: fid, gid
 
   integer :: oseed(4), iseed(4), lda, npos, k, l, m, p, lwork
-  double precision :: tola, tolb, ulp, unfl
+  double precision :: tola, tolb, work1(1), ulp, unfl
   real(WP) :: h
 
   integer, allocatable :: iwork(:)
@@ -154,9 +154,10 @@ program dgenHZ
   p = n
   tola = zero
   tolb = zero
+  work1 = zero
   lwork = -1
-  call dggsvp3('U', 'V', 'Q', m, p, n, df,lda, dg,lda, tola,tola, k, l, du,lda, dv,lda, dq,lda, iwork, tau, tolb, lwork, info)
-  lwork = max(1,ceiling(tolb))
+  call dggsvp3('U', 'V', 'Q', m, p, n, df,lda, dg,lda, tola,tolb, k, l, du,lda, dv,lda, dq,lda, iwork, tau, work1, lwork, info)
+  lwork = max(1,ceiling(work1(1)))
   allocate(dwork(lwork))
 
   tola = dlange('1', m, n, df, lda, dwork)
