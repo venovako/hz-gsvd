@@ -32,3 +32,5 @@
 
 # Debug symbols
 *.dSYM
+
+*__genmod.f90
