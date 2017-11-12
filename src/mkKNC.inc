@@ -14,12 +14,16 @@ ARFLAGS=-qnoipo -lib rsv
 
 ifdef NDEBUG
 OPTFLAGS=-O$(NDEBUG)
+ifdef PROFILE
+DBGFLAGS=-DNDEBUG -DPROFILE -fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -debug pubnames -debug parallel -debug-parameters all -qopt-report=5 -traceback
+else # no profiling
 DBGFLAGS=-DNDEBUG -fno-omit-frame-pointer -qopt-report=5 -traceback
+endif # ?PROFILE
 FPUFLAGS=-DHAVE_FMA -fp-model source -fma -no-ftz -no-complex-limited-range -no-fast-transcendentals -prec-div -prec-sqrt
 else # DEBUG
 OPTFLAGS=-O0
 DBGFLAGS=-fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -debug pubnames -debug parallel -debug-parameters all -check all -warn all -traceback
-FPUFLAGS=-DHAVE_FMA -fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check -no-ftz -no-complex-limited-range -prec-div -prec-sqrt
+FPUFLAGS=-DHAVE_FMA -fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check -no-ftz -no-complex-limited-range -no-fast-transcendentals -prec-div -prec-sqrt
 endif # ?NDEBUG
 
 ifeq ($(USE_MKL),sequential)
