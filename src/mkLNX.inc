@@ -9,7 +9,7 @@ else # no MPI
 FC=h5fc
 endif # ?USE_MPI
 
-FORFLAGS=-DUSE_INTEL -qopenmp -fexceptions -reentrancy threaded -standard-semantics
+FORFLAGS=-DUSE_INTEL -i8 -qopenmp -fexceptions -reentrancy threaded -standard-semantics
 ARFLAGS=-qnoipo -lib rsv
 
 ifdef NDEBUG
@@ -27,13 +27,15 @@ FPUFLAGS=-DHAVE_FMA -fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check
 endif # ?NDEBUG
 
 ifeq ($(USE_MKL),sequential)
-MKL_D=-DUSE_MKL -DUSE_LAPACK_SEQ -DMKL_DIRECT_CALL -DMKL_DIRECT_CALL_SEQ
-MKL=sequential
+MKL_D=-DUSE_MKL -DMKL_ILP64 -DUSE_LAPACK_SEQ -DMKL_DIRECT_CALL -DMKL_DIRECT_CALL_SEQ
+MKL_l=-lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 else # USE_MKL=parallel
-MKL_D=-DUSE_MKL -DUSE_LAPACK_PAR -DMKL_DIRECT_CALL
-MKL=parallel
+MKL_D=-DUSE_MKL -DMKL_ILP64 -DUSE_LAPACK_PAR -DMKL_DIRECT_CALL
+MKL_l=-lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl
 endif # ?USE_MKL
+MKL_I=-I${MKLROOT}/include/intel64/ilp64 -I${MKLROOT}/include
+MKL_L=-L${MKLROOT}/lib/intel64 -Wl,-rpath=${MKLROOT}/lib/intel64 -L${MKLROOT}/../compiler/lib/intel64 -Wl,-rpath=${MKLROOT}/../compiler/lib/intel64 -Wl,--no-as-needed
 
-LIBFLAGS=-I../HZ $(MKL_D) -mkl=$(MKL)
+LIBFLAGS=-I../HZ $(MKL_D) $(MKL_I)
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz
+LDFLAGS=-L../HZ -lhz $(MKL_L) $(MKL_l)

@@ -2,9 +2,9 @@ SUBROUTINE TIMER_PRINT(CLK)
 
   IMPLICIT NONE
 
-  INTEGER(8), INTENT(IN) :: CLK(3)
+  INTEGER, INTENT(IN) :: CLK(3)
 
-  INTEGER(8) :: C, Q, R
+  INTEGER :: C, Q, R
   INTEGER :: U
 
   U = GET_IOUNIT('O')
@@ -15,13 +15,13 @@ SUBROUTINE TIMER_PRINT(CLK)
   R = MOD(C, CLK(3))
 
   SELECT CASE (CLK(3))
-  CASE (1000_8)       ! ms
+  CASE (1000)       ! ms
      WRITE (U,1) Q, R
-  CASE (1000000_8)    ! us
+  CASE (1000000)    ! us
      WRITE (U,2) Q, R
-  CASE (1000000000_8) ! ns
+  CASE (1000000000) ! ns
      WRITE (U,3) Q, R
-  CASE DEFAULT        ! other scale
+  CASE DEFAULT      ! other scale
      WRITE (U,4) Q, R, CLK(3)
   END SELECT
 

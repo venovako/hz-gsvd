@@ -2,13 +2,6 @@ subroutine sgenlam(n, iseed, idist, eps, scal, lam, npos, info)
 
   implicit none
 
-      INTEGER WP
-#ifdef USE_GNU
-      PARAMETER (WP=10)
-#else
-      PARAMETER (WP=16)
-#endif
-
   integer, intent(in) :: n, idist
   integer, intent(inout) :: iseed(4)
   real, intent(in) :: eps, scal
@@ -61,13 +54,6 @@ end subroutine sgenlam
 subroutine dgenlam(n, iseed, idist, eps, scal, lam, npos, info)
 
   implicit none
-
-      INTEGER WP
-#ifdef USE_GNU
-      PARAMETER (WP=10)
-#else
-      PARAMETER (WP=16)
-#endif
 
   integer, intent(in) :: n, idist
   integer, intent(inout) :: iseed(4)

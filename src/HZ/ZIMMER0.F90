@@ -10,12 +10,11 @@ SUBROUTINE MY_SZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   REAL, INTENT(IN) :: TOL
   REAL, INTENT(INOUT) :: F(LDF,N), G(LDG,N)
   REAL, INTENT(OUT) :: V(LDV,N), H(*), K(*), SIGMA(*)
-  INTEGER, INTENT(OUT) :: NSWEEP, INFO
-  INTEGER(8), INTENT(OUT) :: NROT(2)
+  INTEGER, INTENT(OUT) :: NSWEEP, NROT(2), INFO
 
   INTEGER :: ITER, I, P, PP, Q, QQ
   LOGICAL :: INTRAN
-  INTEGER(8) :: NROTIN(2)
+  INTEGER :: NROTIN(2)
 
 #ifdef USE_KNC
   REAL :: CSFP(16)
@@ -41,7 +40,7 @@ SUBROUTINE MY_SZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   ! Assume that argument check passed.
   INFO = 0
   NSWEEP = 0
-  NROT = 0_8
+  NROT = 0
   CSFP = S_ZERO
 
   ! V = I_N
@@ -90,7 +89,7 @@ SUBROUTINE MY_SZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
 
      ! Sweep initializations.
 
-     NROTIN = 0_8
+     NROTIN = 0
 
      ! Sweep = row by row (top to bottom), row = left to right.
 
@@ -252,8 +251,8 @@ SUBROUTINE MY_SZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
               ! Transform the columns of V.
               CALL SROTM(M, V(1, P), 1, V(1, Q), 1, FASTR)
 
-              NROTIN(1) = NROTIN(1) + 1_8
-              IF ((ABS(COSF) .NE. S_ONE) .OR. (ABS(COSP) .NE. S_ONE)) NROTIN(2) = NROTIN(2) + 1_8
+              NROTIN(1) = NROTIN(1) + 1
+              IF ((ABS(COSF) .NE. S_ONE) .OR. (ABS(COSP) .NE. S_ONE)) NROTIN(2) = NROTIN(2) + 1
            END IF
 
            ! End of loop for pivot position [p, q].
@@ -326,8 +325,7 @@ SUBROUTINE SZIMMER0(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K, SIGMA, NSWE
   REAL, INTENT(IN) :: TOL
   REAL, INTENT(INOUT) :: F(LDF,N), G(LDG,N)
   REAL, INTENT(OUT) :: V(LDV,N), H(*), K(*), SIGMA(*)
-  INTEGER, INTENT(OUT) :: NSWEEP, INFO
-  INTEGER(8), INTENT(OUT) :: NROT(2)
+  INTEGER, INTENT(OUT) :: NSWEEP, NROT(2), INFO
 
   INTEGER :: MCYCLE, I
   REAL :: MYTOL
@@ -392,12 +390,11 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   DOUBLE PRECISION, INTENT(IN) :: TOL
   DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,N), G(LDG,N)
   DOUBLE PRECISION, INTENT(OUT) :: V(LDV,N), H(*), K(*), SIGMA(*)
-  INTEGER, INTENT(OUT) :: NSWEEP, INFO
-  INTEGER(8), INTENT(OUT) :: NROT(2)
+  INTEGER, INTENT(OUT) :: NSWEEP, NROT(2), INFO
 
   INTEGER :: ITER, I, P, PP, Q, QQ
   LOGICAL :: INTRAN
-  INTEGER(8) :: NROTIN(2)
+  INTEGER :: NROTIN(2)
 
 #ifdef USE_KNC
   DOUBLE PRECISION :: CSFP(8)
@@ -423,7 +420,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   ! Assume that argument check passed.
   INFO = 0
   NSWEEP = 0
-  NROT = 0_8
+  NROT = 0
   CSFP = D_ZERO
 
   ! V = I_N
@@ -472,7 +469,7 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
 
      ! Sweep initializations.
 
-     NROTIN = 0_8
+     NROTIN = 0
 
      ! Sweep = row by row (top to bottom), row = left to right.
 
@@ -634,8 +631,8 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
               ! Transform the columns of V.
               CALL DROTM(M, V(1, P), 1, V(1, Q), 1, FASTR)
 
-              NROTIN(1) = NROTIN(1) + 1_8
-              IF ((ABS(COSF) .NE. D_ONE) .OR. (ABS(COSP) .NE. D_ONE)) NROTIN(2) = NROTIN(2) + 1_8
+              NROTIN(1) = NROTIN(1) + 1
+              IF ((ABS(COSF) .NE. D_ONE) .OR. (ABS(COSP) .NE. D_ONE)) NROTIN(2) = NROTIN(2) + 1
            END IF
 
            ! End of loop for pivot position [p, q].
@@ -708,8 +705,7 @@ SUBROUTINE DZIMMER0(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K, SIGMA, NSWE
   DOUBLE PRECISION, INTENT(IN) :: TOL
   DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,N), G(LDG,N)
   DOUBLE PRECISION, INTENT(OUT) :: V(LDV,N), H(*), K(*), SIGMA(*)
-  INTEGER, INTENT(OUT) :: NSWEEP, INFO
-  INTEGER(8), INTENT(OUT) :: NROT(2)
+  INTEGER, INTENT(OUT) :: NSWEEP, NROT(2), INFO
 
   INTEGER :: MCYCLE, I
   DOUBLE PRECISION :: MYTOL

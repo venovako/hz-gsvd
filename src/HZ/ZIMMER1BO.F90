@@ -9,8 +9,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
   DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,*), G(LDG,*)
   DOUBLE PRECISION, INTENT(OUT) :: V(LDV,*), H(*), K(*), SIGMA(*)
   INTEGER, INTENT(OUT) :: NC(*), IFC(*), IFCS(*), IPL(*), INVP(*),&   ! Global objects for block HZ.
-       NBSIZE, NSWEEP, INFO(2)
-  INTEGER(8), INTENT(OUT) :: NROT(2)
+       NBSIZE, NSWEEP, NROT(2), INFO(2)
   DOUBLE PRECISION, INTENT(OUT) :: FB(LDAC,*), GB(LDAC,*), VB(LDAC,*) ! Local objects for inner HZ.
 
   INTEGER :: ITER, Q
@@ -20,7 +19,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
   INTEGER :: IBL, NC1, IFCS1, IFE1
   INTEGER :: JBL, NC2, IFCS2, IFE2, NCF, IFRS1, IFRS2
   INTEGER :: ITEMP
-  INTEGER(8) :: NROTIN(2)
+  INTEGER :: NROTIN(2)
   DOUBLE PRECISION :: D, FCT
 
   DOUBLE PRECISION, EXTERNAL :: DNRM2
@@ -42,7 +41,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
 
   NBSIZE = NBMAXS
   NSWEEP = 0
-  NROT = 0_8
+  NROT = 0
 
   CALL DLASET('A', M, N, D_ZERO, D_ONE, V, LDV)
 
@@ -146,7 +145,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
         NROT(1) = NROT(1) + NROTIN(1)
         NROT(2) = NROT(2) + NROTIN(2)
 
-        IF (NROTIN(1) .EQ. 0_8) CYCLE
+        IF (NROTIN(1) .EQ. 0) CYCLE
 
         ! Update block convergence tests TRANSF.           
         ! Note: Actually, the only ``normal'' convergence test is that
@@ -253,7 +252,7 @@ SUBROUTINE MY_DZIMMER1BO(FAST, M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, LDAC, 
            NROT(1) = NROT(1) + NROTIN(1)
            NROT(2) = NROT(2) + NROTIN(2)
 
-           IF (NROTIN(1) .EQ. 0_8) CYCLE
+           IF (NROTIN(1) .EQ. 0) CYCLE
 
            ! Update block convergence tests TRANSF.
            ! Note: Actually, the only ``normal'' convergence test is that
@@ -378,8 +377,7 @@ SUBROUTINE DZIMMER1BO(M, N, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, NBMAXS, IPART,&
   DOUBLE PRECISION, INTENT(IN) :: TOL
   DOUBLE PRECISION, INTENT(INOUT) :: F(LDF,*), G(LDG,*)
   DOUBLE PRECISION, INTENT(OUT) :: V(LDV,*), H(*), K(*), SIGMA(*), WORK(*)
-  INTEGER, INTENT(OUT) :: IWORK(*), NBSIZE, NSWEEP, INFO(2)
-  INTEGER(8), INTENT(OUT) :: NROT(2)
+  INTEGER, INTENT(OUT) :: IWORK(*), NBSIZE, NSWEEP, NROT(2), INFO(2)
 
   DOUBLE PRECISION :: MYTOL
   INTEGER :: MYIPRT

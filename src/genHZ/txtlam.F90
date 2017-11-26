@@ -2,13 +2,6 @@ subroutine stxtlam(fn, n, lam, npos, info)
 
   implicit none
 
-      INTEGER WP
-#ifdef USE_GNU
-      PARAMETER (WP=10)
-#else
-      PARAMETER (WP=16)
-#endif
-
   character(len=*), intent(in) :: fn
   integer, intent(in) :: n
   real, intent(out) :: lam(n)
@@ -44,13 +37,6 @@ end subroutine stxtlam
 subroutine dtxtlam(fn, n, lam, npos, info)
 
   implicit none
-
-      INTEGER WP
-#ifdef USE_GNU
-      PARAMETER (WP=10)
-#else
-      PARAMETER (WP=16)
-#endif
 
   character(len=*), intent(in) :: fn
   integer, intent(in) :: n
