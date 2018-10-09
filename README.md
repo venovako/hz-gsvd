@@ -6,3 +6,5 @@ This software is a supplementary material for the paper
 
 Only the block-oriented algorithm variants are included, up to the shared-memory thread-parallel (OpenMP) level.
 Distributed-memory (MPI) level is still under cleanup and will be added eventually.
+
+This work has been supported in part by Croatian Science Foundation under the project IP--2014--09--3670.
