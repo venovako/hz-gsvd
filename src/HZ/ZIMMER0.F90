@@ -16,16 +16,12 @@ SUBROUTINE MY_SZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   LOGICAL :: INTRAN
   INTEGER :: NROTIN(2)
 
-#ifdef USE_KNC
-  REAL :: CSFP(16)
-#else
   REAL :: CSFP(4)
-#endif
   !DIR$ ATTRIBUTES ALIGN: 64:: CSFP
   REAL :: COSF, SINF, COSP, SINP
   EQUIVALENCE (CSFP(1), COSF), (CSFP(2), SINF), (CSFP(3), COSP), (CSFP(4), SINP)
 
-  REAL :: COT2T, TANT, COST, SINT
+  REAL :: EE, VV, COT2T, TANT, COST, SINT
   REAL :: APP, AQQ, APQ, BPQ, BPQP, BPQM
   REAL :: FASTR(5), D, FCT, MYTOL, XI, ETA
 
@@ -126,77 +122,82 @@ SUBROUTINE MY_SZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
 
            IF (.NOT. INTRAN) CYCLE
 
-           BPQP = SQRT(S_ONE + BPQ)
-           BPQM = SQRT(S_ONE - BPQ)
-           XI = BPQ / (BPQP + BPQM)
-           ETA = BPQ / ((S_ONE + BPQP) * (S_ONE + BPQM))
+           EE = AQQ - APP
+           VV = SFMA(BPQ, -(APP + AQQ), SCALE(APQ, 1))
 
-           IF (ABS(BPQ) .LT. S_SQRT_EPS_2) THEN
-              ! FCT = S_ONE
-              COT2T = (AQQ - APP) / SFMA(BPQ, -(APP + AQQ), SCALE(APQ, 1))
-              D = ABS(COT2T)
-              IF (D .GE. S_TWO_POW125) THEN
-                 TANT = SCALE(S_ONE / COT2T, -1)
-              ELSE IF (D .LT. S_SQRT_EPS_2) THEN
-                 TANT = SIGN(S_ONE / (D + S_ONE), COT2T)
-              ELSE
-                 TANT = SIGN(S_ONE / (D + SQRT(SFMA(COT2T, COT2T, S_ONE))), COT2T)
-              END IF
-              IF (ABS(TANT) .LT. S_SQRT_EPS_2) THEN
-                 ! COST = S_ONE
-                 ! SINT = TANT
-                 COSF = SFMA((TANT - ETA), XI, S_ONE)           ! COSF = S_ONE + XI * (TANT  - ETA)
-                 SINF = SFMA(SFMA(TANT, ETA, S_ONE), -XI, TANT) ! SINF = TANT  - XI * (S_ONE + ETA * TANT)
-                 COSP = SFMA((TANT + ETA), -XI, S_ONE)          ! COSP = S_ONE - XI * (TANT  + ETA)
-                 SINP = SFMA(SFMA(TANT, -ETA, S_ONE), XI, TANT) ! SINP = TANT  + XI * (S_ONE - ETA * TANT)
-              ELSE
-                 COST = SRSQRT(SFMA(TANT, TANT, S_ONE))
-                 SINT = COST * TANT
-                 COSF = SFMA(SFMA(COST, -ETA, SINT), XI, COST)  ! COSF = COST + XI * (SINT - ETA * COST)
-                 SINF = SFMA(SFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = SINT - XI * (COST + ETA * SINT)
-                 COSP = SFMA(SFMA(COST, ETA, SINT), -XI, COST)  ! COSP = COST - XI * (SINT + ETA * COST)
-                 SINP = SFMA(SFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = SINT + XI * (COST - ETA * SINT)
-              END IF
+           IF ((VV .EQ. S_ZERO) .AND. (EE .EQ. S_ZERO)) THEN
+              BPQP = SRSQRT(S_ONE + ABS(BPQ))
+              BPQM = SRSQRT(S_ONE - ABS(BPQ))
+
+              COSF =  SRSQRT(2.0)
+              SINP = -COSF * BPQP
+              SINF = -COSF * BPQM
+              COSP =  COSF * BPQM
+              COSF =  COSF * BPQP
            ELSE
-              FCT = SQRT(SFMA(BPQ, -BPQ, S_ONE))
-              ! COT2T = ((AQQ - APP) * FCT) / (SCALE(APQ, 1) - (APP + AQQ) * BPQ)
-              COT2T = ((AQQ - APP) * FCT) / SFMA(BPQ, -(APP + AQQ), SCALE(APQ, 1))
-              D = ABS(COT2T)
-              ! TANT = SIGN(S_ONE / (ABS(COT2T) + SQRT(FMA(COT2T,COT2T,S_ONE)), COT2T)
-              IF (D .GE. S_TWO_POW125) THEN
-                 TANT = SCALE(S_ONE / COT2T, -1)
-              ELSE IF (D .LT. S_SQRT_EPS_2) THEN
-                 TANT = SIGN(S_ONE / (D + S_ONE), COT2T)
+              BPQP = SQRT(S_ONE + BPQ)
+              BPQM = SQRT(S_ONE - BPQ)
+              XI = BPQ / (BPQP + BPQM)
+              ETA = BPQ / ((S_ONE + BPQP) * (S_ONE + BPQM))
+
+              IF (ABS(BPQ) .LT. S_SQRT_EPS_2) THEN
+                 ! FCT = S_ONE
+                 COT2T = EE / VV
+                 D = ABS(COT2T)
+                 IF (D .GE. S_TWO_POW125) THEN
+                    TANT = SCALE(S_ONE / COT2T, -1)
+                 ELSE IF (D .LT. S_SQRT_EPS_2) THEN
+                    TANT = SIGN(S_ONE / (D + S_ONE), COT2T)
+                 ELSE
+                    TANT = SIGN(S_ONE / (D + SQRT(SFMA(COT2T, COT2T, S_ONE))), COT2T)
+                 END IF
+                 IF (ABS(TANT) .LT. S_SQRT_EPS_2) THEN
+                    ! COST = S_ONE
+                    ! SINT = TANT
+                    COSF = SFMA((TANT - ETA), XI, S_ONE)           ! COSF = S_ONE + XI * (TANT  - ETA)
+                    SINF = SFMA(SFMA(TANT, ETA, S_ONE), -XI, TANT) ! SINF = TANT  - XI * (S_ONE + ETA * TANT)
+                    COSP = SFMA((TANT + ETA), -XI, S_ONE)          ! COSP = S_ONE - XI * (TANT  + ETA)
+                    SINP = SFMA(SFMA(TANT, -ETA, S_ONE), XI, TANT) ! SINP = TANT  + XI * (S_ONE - ETA * TANT)
+                 ELSE
+                    COST = SRSQRT(SFMA(TANT, TANT, S_ONE))
+                    SINT = COST * TANT
+                    COSF = SFMA(SFMA(COST, -ETA, SINT), XI, COST)  ! COSF = COST + XI * (SINT - ETA * COST)
+                    SINF = SFMA(SFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = SINT - XI * (COST + ETA * SINT)
+                    COSP = SFMA(SFMA(COST, ETA, SINT), -XI, COST)  ! COSP = COST - XI * (SINT + ETA * COST)
+                    SINP = SFMA(SFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = SINT + XI * (COST - ETA * SINT)
+                 END IF
               ELSE
-                 TANT = SIGN(S_ONE / (D + SQRT(SFMA(COT2T, COT2T, S_ONE))), COT2T)
+                 FCT = SQRT(SFMA(BPQ, -BPQ, S_ONE))
+                 COT2T = (EE * FCT) / VV
+                 D = ABS(COT2T)
+                 ! TANT = SIGN(S_ONE / (ABS(COT2T) + SQRT(FMA(COT2T,COT2T,S_ONE)), COT2T)
+                 IF (D .GE. S_TWO_POW125) THEN
+                    TANT = SCALE(S_ONE / COT2T, -1)
+                 ELSE IF (D .LT. S_SQRT_EPS_2) THEN
+                    TANT = SIGN(S_ONE / (D + S_ONE), COT2T)
+                 ELSE
+                    TANT = SIGN(S_ONE / (D + SQRT(SFMA(COT2T, COT2T, S_ONE))), COT2T)
+                 END IF
+                 IF (ABS(TANT) .LT. S_SQRT_EPS_2) THEN
+                    ! COST = S_ONE
+                    ! SINT = TANT
+                    COSF = SFMA((TANT - ETA), XI, S_ONE)           ! COSF = (S_ONE + XI * (TANT  - ETA))
+                    SINF = SFMA(SFMA(TANT, ETA, S_ONE), -XI, TANT) ! SINF = (TANT  - XI * (S_ONE + ETA * TANT))
+                    COSP = SFMA((TANT + ETA), -XI, S_ONE)          ! COSP = (S_ONE - XI * (TANT  + ETA))
+                    SINP = SFMA(SFMA(TANT, -ETA, S_ONE), XI, TANT) ! SINP = (TANT  + XI * (S_ONE - ETA * TANT))
+                 ELSE
+                    COST = SRSQRT(SFMA(TANT, TANT, S_ONE))
+                    SINT = COST * TANT
+                    COSF = SFMA(SFMA(COST, -ETA, SINT), XI, COST)  ! COSF = (COST + XI * (SINT - ETA * COST))
+                    SINF = SFMA(SFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = (SINT - XI * (COST + ETA * SINT))
+                    COSP = SFMA(SFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
+                    SINP = SFMA(SFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
+                 END IF
+                 !DIR$ VECTOR ALWAYS, ALIGNED
+                 DO I = 1, 4
+                    CSFP(I) = CSFP(I) / FCT
+                 END DO
               END IF
-              IF (ABS(TANT) .LT. S_SQRT_EPS_2) THEN
-                 ! COST = S_ONE
-                 ! SINT = TANT
-                 COSF = SFMA((TANT - ETA), XI, S_ONE)           ! COSF = (S_ONE + XI * (TANT  - ETA))
-                 SINF = SFMA(SFMA(TANT, ETA, S_ONE), -XI, TANT) ! SINF = (TANT  - XI * (S_ONE + ETA * TANT))
-                 COSP = SFMA((TANT + ETA), -XI, S_ONE)          ! COSP = (S_ONE - XI * (TANT  + ETA))
-                 SINP = SFMA(SFMA(TANT, -ETA, S_ONE), XI, TANT) ! SINP = (TANT  + XI * (S_ONE - ETA * TANT))
-              ELSE
-                 COST = SRSQRT(SFMA(TANT, TANT, S_ONE))
-                 SINT = COST * TANT
-                 COSF = SFMA(SFMA(COST, -ETA, SINT), XI, COST)  ! COSF = (COST + XI * (SINT - ETA * COST))
-                 SINF = SFMA(SFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = (SINT - XI * (COST + ETA * SINT))
-                 COSP = SFMA(SFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
-                 SINP = SFMA(SFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
-              END IF
-#ifdef USE_KNC
-              D = S_ONE / FCT
-              !DIR$ VECTOR ALWAYS, ALIGNED
-              DO I = 1, 8
-                 CSFP(I) = CSFP(I) * D
-              END DO
-#else
-              !DIR$ VECTOR ALWAYS, ALIGNED
-              DO I = 1, 4
-                 CSFP(I) = CSFP(I) / FCT
-              END DO
-#endif
            END IF
            ! Compute the new ~app,~aqq for sorting.
            APP = COSF*COSF*APP - SCALE(COSF*SINP*APQ, 1) + SINP*SINP*AQQ
@@ -396,16 +397,12 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
   LOGICAL :: INTRAN
   INTEGER :: NROTIN(2)
 
-#ifdef USE_KNC
-  DOUBLE PRECISION :: CSFP(8)
-#else
   DOUBLE PRECISION :: CSFP(4)
-#endif
   !DIR$ ATTRIBUTES ALIGN: 64:: CSFP
   DOUBLE PRECISION :: COSF, SINF, COSP, SINP
   EQUIVALENCE (CSFP(1), COSF), (CSFP(2), SINF), (CSFP(3), COSP), (CSFP(4), SINP)
 
-  DOUBLE PRECISION :: COT2T, TANT, COST, SINT
+  DOUBLE PRECISION :: EE, VV, COT2T, TANT, COST, SINT
   DOUBLE PRECISION :: APP, AQQ, APQ, BPQ, BPQP, BPQM
   DOUBLE PRECISION :: FASTR(5), D, FCT, MYTOL, XI, ETA
 
@@ -506,77 +503,82 @@ SUBROUTINE MY_DZIMMER0(FAST, M, N, NP, F, LDF, G, LDG, V, LDV, MAXCYC, TOL, H, K
 
            IF (.NOT. INTRAN) CYCLE
 
-           BPQP = SQRT(D_ONE + BPQ)
-           BPQM = SQRT(D_ONE - BPQ)
-           XI = BPQ / (BPQP + BPQM)
-           ETA = BPQ / ((D_ONE + BPQP) * (D_ONE + BPQM))
+           EE = AQQ - APP
+           VV = DFMA(BPQ, -(APP + AQQ), SCALE(APQ, 1))
 
-           IF (ABS(BPQ) .LT. D_SQRT_EPS_2) THEN
-              ! FCT = D_ONE
-              COT2T = (AQQ - APP) / DFMA(BPQ, -(APP + AQQ), SCALE(APQ, 1))
-              D = ABS(COT2T)
-              IF (D .GE. D_TWO_POW_27) THEN
-                 TANT = SCALE(D_ONE / COT2T, -1)
-              ELSE IF (D .LT. D_SQRT_EPS_2) THEN
-                 TANT = SIGN(D_ONE / (D + D_ONE), COT2T)
-              ELSE
-                 TANT = SIGN(D_ONE / (D + SQRT(DFMA(COT2T, COT2T, D_ONE))), COT2T)
-              END IF
-              IF (ABS(TANT) .LT. D_SQRT_EPS_2) THEN
-                 ! COST = D_ONE
-                 ! SINT = TANT
-                 COSF = DFMA((TANT - ETA), XI, D_ONE)           ! COSF = D_ONE + XI * (TANT  - ETA)
-                 SINF = DFMA(DFMA(TANT, ETA, D_ONE), -XI, TANT) ! SINF = TANT  - XI * (D_ONE + ETA * TANT)
-                 COSP = DFMA((TANT + ETA), -XI, D_ONE)          ! COSP = D_ONE - XI * (TANT  + ETA)
-                 SINP = DFMA(DFMA(TANT, -ETA, D_ONE), XI, TANT) ! SINP = TANT  + XI * (D_ONE - ETA * TANT)
-              ELSE
-                 COST = DRSQRT(DFMA(TANT, TANT, D_ONE))
-                 SINT = COST * TANT
-                 COSF = DFMA(DFMA(COST, -ETA, SINT), XI, COST)  ! COSF = COST + XI * (SINT - ETA * COST)
-                 SINF = DFMA(DFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = SINT - XI * (COST + ETA * SINT)
-                 COSP = DFMA(DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = COST - XI * (SINT + ETA * COST)
-                 SINP = DFMA(DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = SINT + XI * (COST - ETA * SINT)
-              END IF
+           IF ((VV .EQ. D_ZERO) .AND. (EE .EQ. D_ZERO)) THEN
+              BPQP = DRSQRT(D_ONE + ABS(BPQ))
+              BPQM = DRSQRT(D_ONE - ABS(BPQ))
+
+              COSF =  DRSQRT(2.0D0)
+              SINP = -COSF * BPQP
+              SINF = -COSF * BPQM
+              COSP =  COSF * BPQM
+              COSF =  COSF * BPQP
            ELSE
-              FCT = SQRT(DFMA(BPQ, -BPQ, D_ONE))
-              ! COT2T = ((AQQ - APP) * FCT) / (SCALE(APQ, 1) - (APP + AQQ) * BPQ)
-              COT2T = ((AQQ - APP) * FCT) / DFMA(BPQ, -(APP + AQQ), SCALE(APQ, 1))
-              D = ABS(COT2T)
-              ! TANT = SIGN(D_ONE / (ABS(COT2T) + SQRT(FMA(COT2T,COT2T,D_ONE)), COT2T)
-              IF (D .GE. D_TWO_POW_27) THEN
-                 TANT = SCALE(D_ONE / COT2T, -1)
-              ELSE IF (D .LT. D_SQRT_EPS_2) THEN
-                 TANT = SIGN(D_ONE / (D + D_ONE), COT2T)
+              BPQP = SQRT(D_ONE + BPQ)
+              BPQM = SQRT(D_ONE - BPQ)
+              XI = BPQ / (BPQP + BPQM)
+              ETA = BPQ / ((D_ONE + BPQP) * (D_ONE + BPQM))
+
+              IF (ABS(BPQ) .LT. D_SQRT_EPS_2) THEN
+                 ! FCT = D_ONE
+                 COT2T = EE / VV
+                 D = ABS(COT2T)
+                 IF (D .GE. D_TWO_POW_27) THEN
+                    TANT = SCALE(D_ONE / COT2T, -1)
+                 ELSE IF (D .LT. D_SQRT_EPS_2) THEN
+                    TANT = SIGN(D_ONE / (D + D_ONE), COT2T)
+                 ELSE
+                    TANT = SIGN(D_ONE / (D + SQRT(DFMA(COT2T, COT2T, D_ONE))), COT2T)
+                 END IF
+                 IF (ABS(TANT) .LT. D_SQRT_EPS_2) THEN
+                    ! COST = D_ONE
+                    ! SINT = TANT
+                    COSF = DFMA((TANT - ETA), XI, D_ONE)           ! COSF = D_ONE + XI * (TANT  - ETA)
+                    SINF = DFMA(DFMA(TANT, ETA, D_ONE), -XI, TANT) ! SINF = TANT  - XI * (D_ONE + ETA * TANT)
+                    COSP = DFMA((TANT + ETA), -XI, D_ONE)          ! COSP = D_ONE - XI * (TANT  + ETA)
+                    SINP = DFMA(DFMA(TANT, -ETA, D_ONE), XI, TANT) ! SINP = TANT  + XI * (D_ONE - ETA * TANT)
+                 ELSE
+                    COST = DRSQRT(DFMA(TANT, TANT, D_ONE))
+                    SINT = COST * TANT
+                    COSF = DFMA(DFMA(COST, -ETA, SINT), XI, COST)  ! COSF = COST + XI * (SINT - ETA * COST)
+                    SINF = DFMA(DFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = SINT - XI * (COST + ETA * SINT)
+                    COSP = DFMA(DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = COST - XI * (SINT + ETA * COST)
+                    SINP = DFMA(DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = SINT + XI * (COST - ETA * SINT)
+                 END IF
               ELSE
-                 TANT = SIGN(D_ONE / (D + SQRT(DFMA(COT2T, COT2T, D_ONE))), COT2T)
+                 FCT = SQRT(DFMA(BPQ, -BPQ, D_ONE))
+                 COT2T = (EE * FCT) / VV
+                 D = ABS(COT2T)
+                 ! TANT = SIGN(D_ONE / (ABS(COT2T) + SQRT(FMA(COT2T,COT2T,D_ONE)), COT2T)
+                 IF (D .GE. D_TWO_POW_27) THEN
+                    TANT = SCALE(D_ONE / COT2T, -1)
+                 ELSE IF (D .LT. D_SQRT_EPS_2) THEN
+                    TANT = SIGN(D_ONE / (D + D_ONE), COT2T)
+                 ELSE
+                    TANT = SIGN(D_ONE / (D + SQRT(DFMA(COT2T, COT2T, D_ONE))), COT2T)
+                 END IF
+                 IF (ABS(TANT) .LT. D_SQRT_EPS_2) THEN
+                    ! COST = D_ONE
+                    ! SINT = TANT
+                    COSF = DFMA((TANT - ETA), XI, D_ONE)           ! COSF = (D_ONE + XI * (TANT  - ETA))
+                    SINF = DFMA(DFMA(TANT, ETA, D_ONE), -XI, TANT) ! SINF = (TANT  - XI * (D_ONE + ETA * TANT))
+                    COSP = DFMA((TANT + ETA), -XI, D_ONE)          ! COSP = (D_ONE - XI * (TANT  + ETA))
+                    SINP = DFMA(DFMA(TANT, -ETA, D_ONE), XI, TANT) ! SINP = (TANT  + XI * (D_ONE - ETA * TANT))
+                 ELSE
+                    COST = DRSQRT(DFMA(TANT, TANT, D_ONE))
+                    SINT = COST * TANT
+                    COSF = DFMA(DFMA(COST, -ETA, SINT), XI, COST)  ! COSF = (COST + XI * (SINT - ETA * COST))
+                    SINF = DFMA(DFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = (SINT - XI * (COST + ETA * SINT))
+                    COSP = DFMA(DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
+                    SINP = DFMA(DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
+                 END IF
+                 !DIR$ VECTOR ALWAYS, ALIGNED
+                 DO I = 1, 4
+                    CSFP(I) = CSFP(I) / FCT
+                 END DO
               END IF
-              IF (ABS(TANT) .LT. D_SQRT_EPS_2) THEN
-                 ! COST = D_ONE
-                 ! SINT = TANT
-                 COSF = DFMA((TANT - ETA), XI, D_ONE)           ! COSF = (D_ONE + XI * (TANT  - ETA))
-                 SINF = DFMA(DFMA(TANT, ETA, D_ONE), -XI, TANT) ! SINF = (TANT  - XI * (D_ONE + ETA * TANT))
-                 COSP = DFMA((TANT + ETA), -XI, D_ONE)          ! COSP = (D_ONE - XI * (TANT  + ETA))
-                 SINP = DFMA(DFMA(TANT, -ETA, D_ONE), XI, TANT) ! SINP = (TANT  + XI * (D_ONE - ETA * TANT))
-              ELSE
-                 COST = DRSQRT(DFMA(TANT, TANT, D_ONE))
-                 SINT = COST * TANT
-                 COSF = DFMA(DFMA(COST, -ETA, SINT), XI, COST)  ! COSF = (COST + XI * (SINT - ETA * COST))
-                 SINF = DFMA(DFMA(SINT, ETA, COST), -XI, SINT)  ! SINF = (SINT - XI * (COST + ETA * SINT))
-                 COSP = DFMA(DFMA(COST, ETA, SINT), -XI, COST)  ! COSP = (COST - XI * (SINT + ETA * COST))
-                 SINP = DFMA(DFMA(SINT, -ETA, COST), XI, SINT)  ! SINP = (SINT + XI * (COST - ETA * SINT))
-              END IF
-#ifdef USE_KNC
-              D = D_ONE / FCT
-              !DIR$ VECTOR ALWAYS, ALIGNED
-              DO I = 1, 8
-                 CSFP(I) = CSFP(I) * D
-              END DO
-#else
-              !DIR$ VECTOR ALWAYS, ALIGNED
-              DO I = 1, 4
-                 CSFP(I) = CSFP(I) / FCT
-              END DO
-#endif
            END IF
            ! Compute the new ~app,~aqq for sorting.
            APP = COSF*COSF*APP - SCALE(COSF*SINP*APQ, 1) + SINP*SINP*AQQ
