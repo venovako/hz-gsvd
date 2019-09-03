@@ -1,4 +1,4 @@
-# Assumes Homebrew installations of gfortran and HDF5, and an FMA-enabled CPU.
+# Assumes installations of gfortran and HDF5, and an FMA-enabled CPU.
 RM=rm -rf
 AR=ar
 
