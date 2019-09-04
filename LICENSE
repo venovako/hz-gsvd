@@ -5,6 +5,7 @@ Copyright (c) 2014-2019 Vedran Novaković <venovako@venovako.eu>, Sanja Singer <
 <from February 2015 to October 2017 for Vedran Novaković: vedran.novakovic@stfc.ac.uk>
 <from March 2018 to September 2018 for for Vedran Novaković: novakoni@uji.es>
 <also externally for Vedran Novaković: venovako@math.hr>
+BLAS/LAPACK parts of src/genHZ: modified from Netlib LAPACK sources (see copyrights in the files)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
