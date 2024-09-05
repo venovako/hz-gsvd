@@ -5,24 +5,21 @@ AR=xiar
 #ifort
 FC=h5fc
 
-FORFLAGS=-DUSE_INTEL -i8 -qopenmp -standard-semantics
+FORFLAGS=-DUSE_INTEL -i8 -qopenmp -reentrancy threaded -standard-semantics
 ARFLAGS=-qnoipo -lib rsv
 
-CPUFLAGS=-xHost -mprefer-vector-width=512
-FPUFLAGS=-fp-model=precise -fp-speculation=safe -fimf-precision=high -fma -fprotect-parens -no-ftz
-DBGFLAGS=-fno-omit-frame-pointer -traceback -static-libgcc
-GDBFLAGS=-g -debug emit_column -debug extended -debug inline-debug-info -debug pubnames -debug parallel
-
 ifdef NDEBUG
-OPTFLAGS=-O$(NDEBUG) $(CPUFLAGS)
-DBGFLAGS += -DNDEBUG -qopt-report=3
+OPTFLAGS=-O$(NDEBUG) -xHost -qopt-zmm-usage=high
 ifdef PROFILE
-DBGFLAGS += $(GDBFLAGS)
-endif # PROFILE
+DBGFLAGS=-DNDEBUG -DPROFILE -fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -debug pubnames -debug parallel -debug-parameters all -qopt-report=5 -traceback
+else # no profiling
+DBGFLAGS=-DNDEBUG -fno-omit-frame-pointer -qopt-report=5 -traceback
+endif # ?PROFILE
+FPUFLAGS=-fp-model precise -fma -no-ftz -no-complex-limited-range -no-fast-transcendentals -prec-div -prec-sqrt
 else # DEBUG
-OPTFLAGS=-O0 $(CPUFLAGS)
-DBGFLAGS += $(GDBFLAGS) -check all
-FPUFLAGS += -assume ieee_fpe_flags -fp-stack-check
+OPTFLAGS=-O0 -xHost -qopt-zmm-usage=high
+DBGFLAGS=-fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -debug pubnames -debug parallel -debug-parameters all -check all -warn all -traceback
+FPUFLAGS=-fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check -no-ftz -no-complex-limited-range -no-fast-transcendentals -prec-div -prec-sqrt
 endif # ?NDEBUG
 
 ifeq ($(USE_MKL),sequential)
