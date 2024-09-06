@@ -32,4 +32,4 @@ MKL_L=-L${MKLROOT}/lib/intel64 -Wl,-rpath=${MKLROOT}/lib/intel64 -L${MKLROOT}/..
 
 LIBFLAGS=-I../HZ $(MKL_D) $(MKL_I)
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz $(MKL_L) $(MKL_l)
+LDFLAGS=-L../HZ -lhz $(MKL_L) $(MKL_l) $(shell if [ -L /usr/lib64/libmemkind.so ]; then echo '-lmemkind'; fi)

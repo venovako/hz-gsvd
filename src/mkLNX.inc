@@ -8,20 +8,19 @@ FC=h5fc
 FORFLAGS=-DUSE_INTEL -i8 -qopenmp -standard-semantics
 ARFLAGS=-qnoipo -lib rsv
 
-CPUFLAGS=-xHost -mprefer-vector-width=512
+CPUFLAGS=-xHost -fno-omit-frame-pointer -mprefer-vector-width=512 -vec-threshold0
 FPUFLAGS=-fp-model=precise -fp-speculation=safe -fimf-precision=high -fma -fprotect-parens -no-ftz
-DBGFLAGS=-fno-omit-frame-pointer -traceback -static-libgcc
 GDBFLAGS=-g -debug emit_column -debug extended -debug inline-debug-info -debug pubnames -debug parallel
 
 ifdef NDEBUG
 OPTFLAGS=-O$(NDEBUG) $(CPUFLAGS)
-DBGFLAGS += -DNDEBUG -qopt-report=3
+DBGFLAGS=-DNDEBUG -qopt-report=3
 ifdef PROFILE
 DBGFLAGS += $(GDBFLAGS)
 endif # PROFILE
 else # DEBUG
 OPTFLAGS=-O0 $(CPUFLAGS)
-DBGFLAGS += $(GDBFLAGS) -check all
+DBGFLAGS=$(GDBFLAGS) -check all
 FPUFLAGS += -assume ieee_fpe_flags -fp-stack-check
 endif # ?NDEBUG
 
@@ -37,4 +36,4 @@ MKL_L=-L${MKLROOT}/lib/intel64 -Wl,-rpath=${MKLROOT}/lib/intel64 -L${MKLROOT}/..
 
 LIBFLAGS=-I../HZ $(MKL_D) $(MKL_I)
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FORFLAGS) $(FPUFLAGS)
-LDFLAGS=-L../HZ -lhz $(MKL_L) $(MKL_l)
+LDFLAGS=-traceback -static-libgcc -L../HZ -lhz $(MKL_L) $(MKL_l) $(shell if [ -L /usr/lib64/libmemkind.so ]; then echo '-lmemkind'; fi)
