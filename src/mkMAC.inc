@@ -7,7 +7,10 @@ FC=h5fc
 FORFLAGS=-DUSE_GNU -fdefault-integer-8 -ffree-line-length-none -fopenmp -fstack-arrays
 ARFLAGS=rsv
 
-CPUFLAGS=-march=native -Wa,-q
+ifndef CPU
+CPU=native
+endif # !CPU
+CPUFLAGS=-march=$(CPU) -Wa,-q
 FPUFLAGS=-ffp-contract=fast
 
 ifdef NDEBUG

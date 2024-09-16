@@ -8,8 +8,11 @@ FC=h5fc
 FORFLAGS=-DUSE_INTEL -i8 -qopenmp -reentrancy threaded -standard-semantics
 ARFLAGS=-qnoipo -lib rsv
 
+ifndef CPU
+CPU=Host
+endif # !CPU
 ifdef NDEBUG
-OPTFLAGS=-O$(NDEBUG) -xHost -qopt-zmm-usage=high
+OPTFLAGS=-O$(NDEBUG) -x$(CPU) -qopt-zmm-usage=high
 ifdef PROFILE
 DBGFLAGS=-DNDEBUG -DPROFILE -fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -debug pubnames -debug parallel -debug-parameters all -qopt-report=5 -traceback
 else # no profiling
@@ -17,7 +20,7 @@ DBGFLAGS=-DNDEBUG -fno-omit-frame-pointer -qopt-report=5 -traceback
 endif # ?PROFILE
 FPUFLAGS=-fp-model precise -fma -no-ftz -no-complex-limited-range -no-fast-transcendentals -prec-div -prec-sqrt
 else # DEBUG
-OPTFLAGS=-O0 -xHost -qopt-zmm-usage=high
+OPTFLAGS=-O0 -x$(CPU) -qopt-zmm-usage=high
 DBGFLAGS=-fno-omit-frame-pointer -g -debug extended -debug inline-debug-info -debug pubnames -debug parallel -debug-parameters all -check all -warn all -traceback
 FPUFLAGS=-fp-model strict -assume ieee_fpe_flags -fma -fp-stack-check -no-ftz -no-complex-limited-range -no-fast-transcendentals -prec-div -prec-sqrt
 endif # ?NDEBUG

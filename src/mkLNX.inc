@@ -8,7 +8,11 @@ FC=h5fc
 FORFLAGS=-DUSE_INTEL -i8 -qopenmp -standard-semantics
 ARFLAGS=-qnoipo -lib rsv
 
-CPUFLAGS=-xHost -fno-omit-frame-pointer -mprefer-vector-width=512 -vec-threshold0
+ifndef CPU
+CPU=Host
+# common-avx512 for KNLs
+endif # !CPU
+CPUFLAGS=-x$(CPU) -fno-omit-frame-pointer -mprefer-vector-width=512 -vec-threshold0
 FPUFLAGS=-fp-model=precise -fp-speculation=safe -fimf-precision=high -fma -fprotect-parens -no-ftz
 GDBFLAGS=-g -debug emit_column -debug extended -debug inline-debug-info -debug pubnames -debug parallel
 
