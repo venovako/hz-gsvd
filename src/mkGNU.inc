@@ -4,8 +4,8 @@ AR=ar
 
 #gfortran
 FC=h5fc
-
-FORFLAGS=-DUSE_GNU -fdefault-integer-8 -ffree-line-length-none -fopenmp -fstack-arrays
+# assumes that h5fc sets at least: -fdefault-integer-8
+FORFLAGS=-DUSE_GNU -fPIC -fexceptions -fasynchronous-unwind-tables -fno-omit-frame-pointer -fvect-cost-model=unlimited -ffree-line-length-none -fopenmp -fstack-arrays
 ARFLAGS=rsv
 
 ifndef CPU
