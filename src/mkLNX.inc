@@ -4,13 +4,13 @@ AR=xiar
 
 #ifort
 FC=h5fc
-ifndef CPU
-CPU=Host
+ifndef MARCH
+MARCH=Host
 # common-avx512 for KNLs
-endif # !CPU
+endif # !MARCH
 ARFLAGS=-qnoipo -lib rsv
 # assumes that h5fc sets at least: -i8 -standard-semantics
-CPUFLAGS=-DUSE_INTEL -x$(CPU) -fPIC -fexceptions -fasynchronous-unwind-tables -fno-omit-frame-pointer -mprefer-vector-width=512 -vec-threshold0 -traceback
+CPUFLAGS=-DUSE_INTEL -x$(MARCH) -fPIC -fexceptions -fasynchronous-unwind-tables -fno-omit-frame-pointer -mprefer-vector-width=512 -vec-threshold0 -traceback
 FPUFLAGS=-fp-model=precise -fp-speculation=safe -fimf-precision=high -fma -fprotect-parens -no-ftz
 GDBFLAGS=-g -debug emit_column -debug extended -debug inline-debug-info -debug pubnames -debug parallel
 

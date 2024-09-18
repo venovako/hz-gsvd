@@ -8,14 +8,14 @@ FC=h5fc
 FORFLAGS=-DUSE_GNU -fPIC -fexceptions -fasynchronous-unwind-tables -fno-omit-frame-pointer -fvect-cost-model=unlimited -ffree-line-length-none -fopenmp -fstack-arrays
 ARFLAGS=rsv
 
-ifndef CPU
-CPU=native
-endif # !CPU
-CPUFLAGS=-march=$(CPU) -Wa,-q
+ifndef MARCH
+MARCH=native
+endif # !MARCH
+CPUFLAGS=-march=$(MARCH) -Wa,-q
 FPUFLAGS=-ffp-contract=fast
 
 ifdef NDEBUG
-OPTFLAGS=-O$(NDEBUG) $(CPUFLAGS)
+OPTFLAGS=-O$(NDEBUG) $(CPUFLAGS) -fno-math-errno
 DBGFLAGS=-DNDEBUG
 else # DEBUG
 OPTFLAGS=-O0 $(CPUFLAGS)
