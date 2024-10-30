@@ -1,6 +1,6 @@
 # Assumes HDF5, compiled with Intel compilers, and an FMA-enabled CPU.
 RM=rm -rf
-AR=xiar
+AR=ar
 
 #ifort
 FC=h5fc
@@ -8,7 +8,7 @@ ifndef MARCH
 MARCH=Host
 # common-avx512 for KNLs
 endif # !MARCH
-ARFLAGS=-qnoipo -lib rsv
+ARFLAGS=rsv
 # assumes that h5fc sets at least: -i8 -standard-semantics
 CPUFLAGS=-DUSE_INTEL -x$(MARCH) -fPIC -fexceptions -fasynchronous-unwind-tables -fno-omit-frame-pointer -mprefer-vector-width=512 -vec-threshold0 -traceback
 FPUFLAGS=-fp-model=precise -fp-speculation=safe -fimf-precision=high -fma -fprotect-parens -no-ftz
