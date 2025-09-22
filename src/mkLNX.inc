@@ -37,4 +37,4 @@ MKL_I=-I${MKLROOT}/include/intel64/ilp64 -I${MKLROOT}/include
 
 LIBFLAGS=-I../HZ $(MKL_D) $(MKL_I)
 FCFLAGS=$(OPTFLAGS) $(DBGFLAGS) $(LIBFLAGS) $(FPUFLAGS)
-LDFLAGS=-static-libgcc -L../HZ -lhz $(MKL_l) $(shell if [ -L /usr/lib64/libmemkind.so ]; then echo '-lmemkind'; fi)
+LDFLAGS=-L../HZ -lhz $(MKL_l) $(shell if [ -L /usr/lib64/libmemkind.so ]; then echo '-lmemkind'; fi)
